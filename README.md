@@ -46,9 +46,10 @@ PointAndClickCustomizing 플러그인은 액터 부착 및 상태 머신을 활�
 ## 기여 및 향후 계획 (Contribution and Future Plans)
 - **기여:** PR, 이슈 제보 환영! 코드 스타일(로그, 영어 주석, 메모리 관리 등)을 준수 부탁드립니다.  
 - **향후 계획:**  
-  - UI 위젯 제공  
+  - 추가 UI 위젯 제공  
   - SaveGame 기반 영구 저장/불러오기  
-  - 색상/스케일 조정 등 확장 커스터마이징  
+  - 색상/스케일 조정 등 확장 커스터마이징
+  - Ready 기능 고도화
   - 최적화 및 엔진 업데이트 대응
 
 ---
@@ -85,4 +86,4 @@ PointAndClickCustomizing is an Unreal Engine plugin that enables point-and-click
 
 ## Contribution and Future Plans
 - **Contributions:** PRs and issues are welcome—please follow the plugin’s code style and logging conventions.  
-- **Future Plans:** Add UI widgets, persistent save/load, extended customization options (color, scale), and performance/network optimizations.  
+- **Future Plans:** Add more UI widgets, persistent save/load, extended customization options (color, scale), and performance/network optimizations and better ready system.  
