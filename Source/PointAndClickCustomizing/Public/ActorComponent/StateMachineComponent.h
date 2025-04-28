@@ -16,14 +16,11 @@ class POINTANDCLICKCUSTOMIZING_API UStateMachineComponent : public UActorCompone
 	GENERATED_BODY()
 
 public:
-	/** Set a new customizing state. */
 	void SetState(ECustomizingState NewState);
 
-	/** Get current state. */
 	UFUNCTION(BlueprintCallable, Category="Customizing|State")
 	ECustomizingState GetState() const;
 
 private:
-	/** Holds the current customizing state. */
 	ECustomizingState CurrentState = ECustomizingState::Idle;
 };

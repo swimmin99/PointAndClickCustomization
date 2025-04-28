@@ -74,17 +74,17 @@ AAttachableActor* AAttachableActor::SpawnAttachment(
 
     // Initialize IDs
     Att->ActorID = Record.ActorID;
-    Att->BoneID  = Record.BoneName;
+    Att->BoneName  = Record.BoneName;
     UE_LOG(LogCustomizingPlugin, Log,
         TEXT("SpawnAttachment - Set ActorID=%s BoneID=%s"),
-        *Att->ActorID.ToString(), *Att->BoneID.ToString());
+        *Att->ActorID.ToString(), *Att->BoneName.ToString());
 
     // Attach and restore rotation
     Att->AttachToComponent(
         Skel,
         FAttachmentTransformRules::KeepRelativeTransform, 
         Record.BoneName);
-    Att->AddActorWorldRotation(Record.RelativeRotation);
+    Att->AddActorWorldRotation(Record.ActorRotation);
 
 #if WITH_EDITOR
     // Visualize attachment point
@@ -154,7 +154,7 @@ AAttachableActor* AAttachableActor::SpawnPreview(
     Att->ActorID = InActorID;
     Att->SetActorEnableCollision(false);
     UE_LOG(LogCustomizingPlugin, Log,
-        TEXT("SpawnPreview - Spawned preview ActorID=%s"), *Att->ActorID.ToString());
+        TEXT("SpawnPreview - Spawned preview ActorID=%s in Player : %s"), *Att->ActorID.ToString());
 
     return Att;
 }

@@ -16,25 +16,18 @@ class POINTANDCLICKCUSTOMIZING_API UAttachmentLoaderComponent : public UActorCom
 	GENERATED_BODY()
 
 public:
-	/** Log all stored attachments for this mesh (editor-only visuals). */
 	void DebugLogStoredAttachments(USkeletalMeshComponent* Skel);
 
-	/** Spawn all existing attachments on this mesh. */
 	UFUNCTION(BlueprintCallable, Category="Attachment")
 	void LoadExistingAttachments(USkeletalMeshComponent* Skel);
 
-	/** Spawn attachments for clients using a provided data map. */
 	void LoadExistingAttachmentsForClients(USkeletalMeshComponent* Skel, const TMap<FName, TArray<FAttachmentRecord>>& TargetDataMap);
 	
-	/** DataTable defining which actor to spawn for each record. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	UDataTable* ActorDataTable;
 	
 private:
-	/** Helper: get the owner’s PlayerID from the mesh. */
 	bool TryGetPlayerID(USkeletalMeshComponent* Skel, FName& OutPlayerID) const;
-
-	/** Spawn and attach actor for one record. */
 	void SpawnAttachmentFromRecord(const FAttachmentRecord& Record, USkeletalMeshComponent* Skel);
 
 	

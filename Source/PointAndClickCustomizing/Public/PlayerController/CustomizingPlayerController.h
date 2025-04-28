@@ -25,6 +25,7 @@ public:
     ACustomizingPlayerController();
 
     virtual void BeginPlay() override;
+    virtual void OnPossess(APawn* InPawn) override;
     virtual void Tick(float DeltaSeconds) override;
     virtual void SetupInputComponent() override;
 
@@ -111,6 +112,7 @@ private:
     // ---- Input callbacks ----
     void Input_Look(const FInputActionValue& Value);
     void HandleCharacterRotation(const FInputActionValue& Value);
+    void HandleSelectedActorRotation(const FInputActionValue& Value);
     void Input_Zoom(const FInputActionValue& Value);
     void Input_LeftClick(const FInputActionValue& Value);
     void Input_LeftClickEnded(const FInputActionValue& Value);

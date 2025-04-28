@@ -26,7 +26,7 @@ public:
 
     /** Bone/socket name used for attachment. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CustomizingPlugin|Attachable")
-    FName BoneID;
+    FName BoneName;
 
     /**
      * Spawn an attachable actor, attach it to Skel at the recorded bone,
