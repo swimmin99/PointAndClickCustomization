@@ -1,5 +1,8 @@
 # PointAndClickCustomizing 플러그인
-
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f0e4a85f-1fc7-4305-b1ac-8e575aa66fac" width="300" style="margin-right: 20px;" />
+  <img src="https://github.com/user-attachments/assets/01aea4cc-7f9b-4c02-903c-9325319647fb" width="300" />
+</p>
 ## 소개 (Introduction)
 본 프로젝트는 스마일게이트 언리얼 교육 프로그램 UNSEEN 2기 시연회 출품 작품의
 멀티플레이어 완성 구현 버전을 플러그인화한 것입니다. 핵심 로직과 기능 시연에 중점을 두었기 때문에, 그 외 부분은 예시 수준으로 구현되어 있습니다.
