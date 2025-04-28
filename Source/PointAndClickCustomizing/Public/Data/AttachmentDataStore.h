@@ -50,7 +50,6 @@ public:
 		const TMap<FName, TArray<FAttachmentRecord>>& TargetDataMap
 	) const;
 
-private:
 	/** In-memory map: PlayerID -> list of attachments. */
 	TMap<FName, TArray<FAttachmentRecord>> DataMap;
 };

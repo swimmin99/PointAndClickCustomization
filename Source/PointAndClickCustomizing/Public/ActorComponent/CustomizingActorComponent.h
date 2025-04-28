@@ -22,9 +22,10 @@ class POINTANDCLICKCUSTOMIZING_API UCustomizingActorComponent : public UActorCom
 public:
     UCustomizingActorComponent();
 
-    /** Return the record currently being edited. */
-    FAttachmentRecord GetCurrentRecord() const { return CurrentRecord; }
-
+    /** Return or set the record currently being edited. */
+    void SetCurrentRecord(const FAttachmentRecord& Record);
+    const FAttachmentRecord& GetCurrentRecord() const;
+    
     UFUNCTION(BlueprintCallable, Category="Customizing")
     virtual AAttachableActor * GetFocusedActor(){ return Cast<AAttachableActor>(FocusedActor);};
     
@@ -40,8 +41,9 @@ public:
     UFUNCTION(BlueprintCallable, Category="Customizing")
     ECustomizingState GetState() const;
 
+
     UFUNCTION(BlueprintCallable, Category="Customizing")
-    void TryFocusAttachedActor();
+    bool TryFocusAttachedActor();
 
     UFUNCTION(BlueprintCallable, Category="Customizing")
     void CancelPreview();
@@ -56,10 +58,19 @@ public:
     void RotateFocusedActor(const FVector2D& DragDelta);
 
     UFUNCTION(BlueprintCallable, Category="Customizing")
+    void TrySaveRotation();
+
+    
+    void UpdateAttachmentRotation(FName PlayerID, FName ActorID, FName BoneID, const FRotator& NewRotation);
+
+    UFUNCTION(BlueprintCallable, Category="Customizing")
     void LoadExistingAttachments(FName LocalID);
 
     UFUNCTION(Server, Reliable, WithValidation)
     void Server_SaveAttachmentRecord(const FAttachmentRecord& Record);
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void Server_UpdateRotationData(FName ActorID, FName BoneID, const FRotator& NewRotation);
 
 protected:
     virtual void BeginPlay() override;
@@ -110,4 +121,9 @@ private:
     FVector GetMouseIntersectionLoc() const;
     bool IsPreviewNearBone();
     void UpdateDebug() const;
+
+    // ==== Caching ====
+    mutable bool bIsOwnerLocalCached = false;
+    mutable bool bOwnerLocalCacheInitialized = false;
+
 };

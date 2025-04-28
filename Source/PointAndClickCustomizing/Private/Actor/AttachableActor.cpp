@@ -82,12 +82,9 @@ AAttachableActor* AAttachableActor::SpawnAttachment(
     // Attach and restore rotation
     Att->AttachToComponent(
         Skel,
-        FAttachmentTransformRules::SnapToTargetIncludingScale,
+        FAttachmentTransformRules::KeepRelativeTransform, 
         Record.BoneName);
-    Att->SetActorRelativeRotation(Record.RelativeRotation);
-    UE_LOG(LogCustomizingPlugin, Log,
-        TEXT("SpawnAttachment - Attached and applied RelativeRotation=%s"),
-        *Record.RelativeRotation.ToString());
+    Att->AddActorWorldRotation(Record.RelativeRotation);
 
 #if WITH_EDITOR
     // Visualize attachment point

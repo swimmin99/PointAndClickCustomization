@@ -70,6 +70,10 @@ void ACustomCharacter::PostInitializeComponents()
 void ACustomCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (!SpringArmComp) return;
+    SpringArmComp->SetComponentTickEnabled(false);  
+    SpringArmComp->SetActive(false, false); 
     
     // Set mesh visibility: only owner sees their own character mesh
     if (CustomizingMesh)

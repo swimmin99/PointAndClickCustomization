@@ -78,8 +78,7 @@ protected:
     UInputAction* IA_Back;
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Input")
     UInputAction* IA_Enter;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Input")
-    UInputAction* IA_GoToBattle;
+  
 
     /** Rotation speed multiplier. */
     UPROPERTY(EditAnywhere, Category="CustomizingPlugin")
@@ -111,8 +110,10 @@ private:
 
     // ---- Input callbacks ----
     void Input_Look(const FInputActionValue& Value);
+    void HandleCharacterRotation(const FInputActionValue& Value);
     void Input_Zoom(const FInputActionValue& Value);
     void Input_LeftClick(const FInputActionValue& Value);
+    void Input_LeftClickEnded(const FInputActionValue& Value);
     void Input_Delete(const FInputActionValue& Value);
     void Input_Back(const FInputActionValue& Value);
     void Input_GoToBattle(const FInputActionValue& Value);

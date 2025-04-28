@@ -46,21 +46,39 @@ bool UCustomizingActorComponent::TryGetLocalPlayerID(FName& OutPlayerID) const
     return false;
 }
 
+
+void UCustomizingActorComponent::Server_UpdateRotationData_Implementation(FName ActorID, FName BoneID,
+    const FRotator& NewRotation)
+{
+    
+    if (ACustomizingPlayerController* PC = Cast<ACustomizingPlayerController>(GetOwner()))
+    {
+        FName PlayerID = PC->GetPlayerKey();
+        UpdateAttachmentRotation(PlayerID, ActorID, BoneID, NewRotation);
+    }
+}
+
+bool UCustomizingActorComponent::Server_UpdateRotationData_Validate(FName ActorID, FName BoneID, const FRotator& NewRotation)
+{
+    return ActorID != NAME_None && BoneID != NAME_None;
+}
+
 void UCustomizingActorComponent::BeginPlay()
 {
     Super::BeginPlay();
     TryInitializeCharacter();
 }
 
-void UCustomizingActorComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                               FActorComponentTickFunction* ThisTickFunction)
+void UCustomizingActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
     if (!IsOwnerLocal() || !TryInitializeCharacter())
         return;
 
+#if WITH_EDITOR
     UpdateDebug();
+#endif
 
     const ECustomizingState State = StateMachine->GetState();
     if (State == ECustomizingState::Idle)
@@ -72,9 +90,6 @@ void UCustomizingActorComponent::TickComponent(float DeltaTime, ELevelTick TickT
     if (!PreviewActor)
         return;
 
-    UE_LOG(LogCustomizingPlugin, Log, TEXT("%s::TickComponent - State=%s"), *GetName(),
-           *UEnum::GetValueAsString(State));
-
     if (IsPreviewNearBone())
     {
         StateMachine->SetState(ECustomizingState::ActorSnapped);
@@ -84,23 +99,18 @@ void UCustomizingActorComponent::TickComponent(float DeltaTime, ELevelTick TickT
         StateMachine->SetState(ECustomizingState::ActorMoving);
     }
 
-    const ECustomizingState NewState = StateMachine->GetState();
-    if (NewState == ECustomizingState::ActorMoving)
+    if (StateMachine->GetState() == ECustomizingState::ActorMoving)
     {
         UpdateMoving();
-        UE_LOG(LogCustomizingPlugin, Verbose, TEXT("%s::TickComponent - UpdateMoving executed"), *GetName());
     }
-    else if (NewState == ECustomizingState::ActorSnapped)
+    else if (StateMachine->GetState() == ECustomizingState::ActorSnapped)
     {
         FixLocation();
-        UE_LOG(LogCustomizingPlugin, Verbose, TEXT("%s::TickComponent - FixLocation executed"), *GetName());
     }
 
     const FVector Current = PreviewActor->GetActorLocation();
     const FVector NewLoc = FMath::VInterpTo(Current, TargetLocation, DeltaTime, MoveInterpSpeed);
     PreviewActor->SetActorLocation(NewLoc);
-    UE_LOG(LogCustomizingPlugin, Verbose, TEXT("%s::TickComponent - Position updated to %s"),
-           *GetName(), *NewLoc.ToString());
 }
 
 
@@ -123,6 +133,7 @@ bool UCustomizingActorComponent::RequestSpawnByID(FName ActorID)
                *GetName(), *ActorID.ToString());
         return false;
     }
+    PreviewActor->SetReplicates(false);
 
     TargetLocation = PreviewActor->GetActorLocation();
     StateMachine->SetState(ECustomizingState::ActorMoving);
@@ -146,10 +157,20 @@ void UCustomizingActorComponent::FinalizeAttachment()
     Rec.BoneName         = CurrentSnapBone;
     FTransform SockT     = Skel->GetSocketTransform(CurrentSnapBone, RTS_Component);
     Rec.RelativeRotation = (PreviewActor->GetActorQuat() * SockT.GetRotation().Inverse()).Rotator();
-
+    
+   
+    
     if (IsOwnerLocal())
     {
         Server_SaveAttachmentRecord(Rec);
+    } else
+    {
+        PreviewActor->ForEachComponent<UMeshComponent>(false, [](UMeshComponent* MeshComp)
+      {
+          MeshComp->SetOnlyOwnerSee(true);
+          MeshComp->SetOwnerNoSee(false);
+          UE_LOG(LogCustomizingPlugin, Log, TEXT("%s owner-only view applied"), *MeshComp->GetName());
+      });
     }
     //Setting Up Properties for Spawned Actor
     AAttachableActor* TargetActor = Cast<AAttachableActor>(PreviewActor);;
@@ -184,31 +205,30 @@ void UCustomizingActorComponent::UpdateCanFocusDetection()
     StateMachine->SetState(ECustomizingState::Idle);
 }
 
-void UCustomizingActorComponent::TryFocusAttachedActor()
+bool UCustomizingActorComponent::TryFocusAttachedActor()
 {
-    if (StateMachine->GetState() != ECustomizingState::ActorCanFocus
-        || !CachedCanFocusActor || !TryInitializeCharacter())
-    {
-        return;
-    }
+    if (StateMachine->GetState() != ECustomizingState::ActorCanFocus || !CachedCanFocusActor || !TryInitializeCharacter())
+        return false;
 
     FocusedActor = CachedCanFocusActor;
     StateMachine->SetState(ECustomizingState::ActorFocused);
 
-    CurrentRecord.ActorID  = Cast<AAttachableActor>(FocusedActor)->ActorID;
+    CurrentRecord.ActorID = Cast<AAttachableActor>(FocusedActor)->ActorID;
     CurrentRecord.BoneName = FocusedActor->GetAttachParentSocketName();
 
     if (USkeletalMeshComponent* Skel = MyCharacter->GetCustomizingMesh())
     {
         const FTransform SockT = Skel->GetSocketTransform(CurrentRecord.BoneName, RTS_Component);
-        const FQuat RelQ     = FocusedActor->GetActorQuat() * SockT.GetRotation().Inverse();
+        const FQuat RelQ = FocusedActor->GetActorQuat() * SockT.GetRotation().Inverse();
         CurrentRecord.RelativeRotation = RelQ.Rotator();
     }
 
-    UE_LOG(LogCustomizingPlugin, Log, TEXT("%s::TryFocusAttachedActor - FocusedActor=%s"),
+    CachedCanFocusActor = nullptr;
+
+    UE_LOG(LogCustomizingPlugin, Log, TEXT("%s::TryFocusAttachedActor - Successfully focused on %s"),
            *GetName(), *GetNameSafe(FocusedActor));
 
-    CachedCanFocusActor = nullptr;
+    return true;
 }
 
 void UCustomizingActorComponent::CancelPreview()
@@ -282,9 +302,63 @@ void UCustomizingActorComponent::RotateFocusedActor(const FVector2D& DragDelta)
         const FQuat RelQ = FocusedActor->GetActorQuat() * ParentT.GetRotation().Inverse();
         CurrentRecord.RelativeRotation = RelQ.Rotator();
     }
-
+    
     UE_LOG(LogCustomizingPlugin, Log, TEXT("%s::RotateFocusedActor - Actor rotated"), *GetName());
 }
+
+void UCustomizingActorComponent::TrySaveRotation()
+{
+    if (AAttachableActor* TargetActor = GetFocusedActor())
+    {
+        Server_UpdateRotationData(TargetActor->ActorID, TargetActor->BoneID, CurrentRecord.RelativeRotation);
+        UE_LOG(LogCustomizingPlugin, Log, TEXT("%s::TrySaveRotation - Saved rotation for ActorID=%s, BoneID=%s"),
+            *GetName(), *TargetActor->ActorID.ToString(), *TargetActor->BoneID.ToString());
+    }
+    else
+    {
+        UE_LOG(LogCustomizingPlugin, Warning, TEXT("%s::TrySaveRotation - No focused actor to save rotation"), *GetName());
+    }
+}
+
+
+void UCustomizingActorComponent::UpdateAttachmentRotation(
+    FName PlayerID,
+    FName ActorID,
+    FName BoneID,
+    const FRotator& NewRotation
+)
+{
+    if (auto* Store = UAttachmentDataStore::Get())
+    {
+        TArray<FAttachmentRecord>& Records = Store->DataMap.FindOrAdd(PlayerID);
+        for (FAttachmentRecord& Rec : Records)
+        {
+            if (Rec.ActorID == ActorID && Rec.BoneName == BoneID)
+            {
+                Rec.RelativeRotation = NewRotation;
+                UE_LOG(LogCustomizingPlugin, Log,
+                    TEXT("%s::UpdateAttachmentRotation - PlayerID=%s, ActorID=%s, BoneID=%s rotation renewd -> %s"),
+                    *GetName(),
+                    *PlayerID.ToString(),
+                    *ActorID.ToString(),
+                    *BoneID.ToString(),
+                    *NewRotation.ToString()
+                );
+                return;
+            }
+        }
+
+        UE_LOG(LogCustomizingPlugin, Warning,
+            TEXT("%s::UpdateAttachmentRotation - No actor found during the search for updating rotation. PlayerID=%s, ActorID=%s, BoneID=%s"),
+            *GetName(),
+            *PlayerID.ToString(),
+            *ActorID.ToString(),
+            *BoneID.ToString()
+        );
+    }
+}
+
+
 
 void UCustomizingActorComponent::LoadExistingAttachments(FName LocalID)
 {
@@ -308,7 +382,7 @@ void UCustomizingActorComponent::LoadExistingAttachments(FName LocalID)
 
 bool UCustomizingActorComponent::Server_SaveAttachmentRecord_Validate(const FAttachmentRecord& Record)
 {
-    return true;
+    return Record.ActorID != NAME_None && Record.BoneName != NAME_None;
 }
 
 void UCustomizingActorComponent::Server_SaveAttachmentRecord_Implementation(const FAttachmentRecord& Record)
@@ -406,14 +480,29 @@ void UCustomizingActorComponent::UpdateDebug() const
 
 bool UCustomizingActorComponent::IsOwnerLocal() const
 {
-    if (const auto* PC = Cast<APlayerController>(GetOwner()))
+    if (!bOwnerLocalCacheInitialized)
     {
-        return PC->IsLocalController();
+        if (const auto* PC = Cast<APlayerController>(GetOwner()))
+        {
+            bIsOwnerLocalCached = PC->IsLocalController();
+        }
+        bOwnerLocalCacheInitialized = true;
     }
-    return false;
+    return bIsOwnerLocalCached;
 }
+
 
 ECustomizingState UCustomizingActorComponent::GetState() const
 {
     return StateMachine->GetState();
+}
+
+void UCustomizingActorComponent::SetCurrentRecord(const FAttachmentRecord& Record)
+{
+    CurrentRecord = Record;
+}
+
+const FAttachmentRecord& UCustomizingActorComponent::GetCurrentRecord() const
+{
+    return CurrentRecord;
 }
