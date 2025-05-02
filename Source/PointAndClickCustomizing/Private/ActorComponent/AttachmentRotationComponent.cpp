@@ -1,4 +1,6 @@
+// Copyright 2025 Devhanghae All Rights Reserved.
 #include "ActorComponent/AttachmentRotationComponent.h"
+
 #include "Actor/AttachableActor.h"
 #include "ActorComponent/CustomizingActorComponent.h"
 #include "ActorComponent/StateMachineComponent.h"
@@ -11,34 +13,31 @@ UAttachmentRotationComponent::UAttachmentRotationComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UAttachmentRotationComponent::RotateFocusedActor(
+
+void UAttachmentRotationComponent::HandleRotation(
     const FVector2D& PrevScreen,
     const FVector2D& CurrScreen,
     const FVector2D& ViewSize,
-    float Speed)
+    float Speed,
+    AAttachableActor* TargetActor)
 {
-    if (AAttachableActor* Actor = GetFocusedActor())
+    FVector v0   = ScreenToArcball(PrevScreen, ViewSize);
+    FVector v1   = ScreenToArcball(CurrScreen, ViewSize);
+    FVector Axis = FVector::CrossProduct(v0, v1);
+    float   Ang  = FMath::Acos(FMath::Clamp(FVector::DotProduct(v0, v1), -1.f, 1.f)) * Speed;
+
+    if (Axis.SizeSquared() > KINDA_SMALL_NUMBER)
     {
-        FVector v0   = ScreenToArcball(PrevScreen, ViewSize);
-        FVector v1   = ScreenToArcball(CurrScreen, ViewSize);
-        FVector Axis = FVector::CrossProduct(v0, v1);
-        float   Dot  = FVector::DotProduct(v0, v1);
-        float   Ang  = FMath::Acos(FMath::Clamp(Dot, -1.f, 1.f)) * Speed;
-
-        if (Axis.SizeSquared() > KINDA_SMALL_NUMBER)
-        {
-            FQuat Delta    = FQuat(Axis.GetSafeNormal(), Ang);
-            FQuat NewQuat  = Delta * Actor->GetActorQuat();
-            Actor->SetActorRotation(NewQuat);
-        }
-
-        GetOrCacheStateMachine()->SetState(ECustomizingState::ActorFocused);
+        FQuat Delta(Axis.GetSafeNormal(), Ang);
+        FQuat Current = TargetActor->GetActorQuat();
+        FQuat NewQuat = Current * Delta;  
+        TargetActor->SetActorRotation(NewQuat);
     }
 }
 
-void UAttachmentRotationComponent::TrySaveRotation()
+void UAttachmentRotationComponent::TrySaveRotation(AAttachableActor* TargetActor)
 {
-    if (AAttachableActor* Actor = GetFocusedActor())
+    if (AAttachableActor* Actor = TargetActor)
     {
         if (auto* Gateway = GetOwner()->FindComponentByClass<UCustomizingActorComponent>())
         {

@@ -1,4 +1,4 @@
-
+// Copyright 2025 Devhanghae All Rights Reserved.
 #pragma once
 
 #include "CoreMinimal.h"

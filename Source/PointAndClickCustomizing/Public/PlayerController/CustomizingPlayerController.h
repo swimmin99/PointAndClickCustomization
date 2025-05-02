@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright 2025 Devhanghae All Rights Reserved.
 
 #pragma once
 
@@ -6,6 +6,7 @@
 #include "PointAndClickCustomizing.h"           // for LogCustomizingPlugin
 #include "BasePlayerController.h"
 #include "InputActionValue.h"
+#include "Data/FAttachmentRecord.h"
 #include "CustomizingPlayerController.generated.h"
 
 class UCustomizingActorComponent;

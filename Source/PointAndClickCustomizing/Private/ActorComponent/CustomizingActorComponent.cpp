@@ -1,8 +1,7 @@
+// Copyright 2025 Devhanghae All Rights Reserved.
 #include "ActorComponent/CustomizingActorComponent.h"
 #include "ActorComponent/AttachmentPreviewComponent.h"
 #include "ActorComponent/AttachmentFocusComponent.h"
-#include "ActorComponent/AttachmentRotationComponent.h"
-#include "ActorComponent/AttachmentPreviewComponent.h"
 #include "ActorComponent/StateMachineComponent.h"
 #include "Character/CustomCharacter.h"
 #include "GameFramework/Actor.h"
@@ -13,7 +12,6 @@ UCustomizingActorComponent::UCustomizingActorComponent()
 
     PreviewComp     = CreateDefaultSubobject<UAttachmentPreviewComponent>(TEXT("PreviewComp"));
     FocusComp       = CreateDefaultSubobject<UAttachmentFocusComponent>(TEXT("FocusComp"));
-    RotationComp    = CreateDefaultSubobject<UAttachmentRotationComponent>(TEXT("RotationComp"));
 
     StateMachine    = CreateDefaultSubobject<UStateMachineComponent>(TEXT("StateMachine"));
 }
@@ -22,7 +20,7 @@ UCustomizingActorComponent::UCustomizingActorComponent()
 void UCustomizingActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+    
     if (!GetOwner())
         return;
 
@@ -87,12 +85,12 @@ void UCustomizingActorComponent::RotateFocusedActor(
     const FVector2D& ViewSize,
     float Speed)
 {
-    RotationComp->RotateFocusedActor(PrevScreen, CurrScreen, ViewSize, Speed);
+    FocusComp->RotateFocusedActor(PrevScreen, CurrScreen, ViewSize, Speed);
 }
 
 void UCustomizingActorComponent::TrySaveRotation()
 {
-    RotationComp->TrySaveRotation();
+    FocusComp->EndRotate();
 }
 
 ECustomizingState UCustomizingActorComponent::GetState() const

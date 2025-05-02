@@ -1,3 +1,4 @@
+// Copyright 2025 Devhanghae All Rights Reserved.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -38,7 +39,6 @@ protected:
     USkeletalMeshComponent*    GetOrCacheMesh();
     UAttachmentFocusComponent* GetOrCacheFocusComponent();
     UDataTable*                GetOrCacheActorDataTable();
-
     AAttachableActor*          GetFocusedActor();
    
 
@@ -53,5 +53,4 @@ private:
     TWeakObjectPtr<USkeletalMeshComponent>    CachedMesh;
     TWeakObjectPtr<UAttachmentFocusComponent> CachedFocusComp;
     TWeakObjectPtr<UDataTable>                CachedActorTable;
-
 };

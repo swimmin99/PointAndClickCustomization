@@ -1,4 +1,5 @@
-﻿#include "ActorComponent/StateMachineComponent.h"
+﻿// Copyright 2025 Devhanghae All Rights Reserved.
+#include "ActorComponent/StateMachineComponent.h"
 #include "PointAndClickCustomizing.h" 
 #include "Types/ECustomizingState.h"
 

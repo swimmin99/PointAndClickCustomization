@@ -1,3 +1,4 @@
+// Copyright 2025 Devhanghae All Rights Reserved.
 #include "Actor/AttachableActor.h"
 #include "PointAndClickCustomizing.h"          
 #include "Data/FActorDataRow.h"
@@ -87,7 +88,6 @@ AAttachableActor* AAttachableActor::SpawnAttachment(
     Att->AddActorWorldRotation(Record.ActorRotation);
 
 #if WITH_EDITOR
-    // Visualize attachment point
     const FVector Loc = Att->GetActorLocation();
     DrawDebugSphere(World, Loc, 8.f, 12, FColor::Red, false, 10.f, 0, 1.f);
     UE_LOG(LogCustomizingPlugin, Log,
@@ -154,7 +154,7 @@ AAttachableActor* AAttachableActor::SpawnPreview(
     Att->ActorID = InActorID;
     Att->SetActorEnableCollision(false);
     UE_LOG(LogCustomizingPlugin, Log,
-        TEXT("SpawnPreview - Spawned preview ActorID=%s in Player : %s"), *Att->ActorID.ToString());
+        TEXT("SpawnPreview - Spawned preview ActorID=%s"), *Att->ActorID.ToString());
 
     return Att;
 }

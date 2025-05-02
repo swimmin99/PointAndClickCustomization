@@ -6,6 +6,7 @@
 #include "ActorComponent/StateMachineComponent.h"
 #include "Character/CustomCharacter.h"
 #include "Data/AttachmentDataStore.h"
+// Copyright 2025 Devhanghae All Rights Reserved.
 #include "PlayerController/CustomizingPlayerController.h"
 #if WITH_EDITOR
 #include "DrawDebugHelpers.h"
@@ -60,7 +61,7 @@ void UAttachmentPreviewComponent::FinalizeAttachment(bool IsLocal)
     {
         PreviewActor->AttachToComponent(
             Mesh,
-            FAttachmentTransformRules::SnapToTargetIncludingScale,
+            FAttachmentTransformRules::SnapToTargetNotIncludingScale,
             CurrentSnapBone);
         PreviewActor->SetActorEnableCollision(true);
     }

@@ -1,3 +1,4 @@
+// Copyright 2025 Devhanghae All Rights Reserved.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -85,17 +86,12 @@ protected:
     UDataTable* ActorDataTable = nullptr;
     
 private:
-    /** 실제 로직을 위임하는 서브 컴포넌트들 */
     UPROPERTY()
     UAttachmentPreviewComponent*    PreviewComp;
 
     UPROPERTY()
     UAttachmentFocusComponent*      FocusComp;
-
-    UPROPERTY()
-    UAttachmentRotationComponent*   RotationComp;
     
-    /** 상태 관리용 StateMachine */
     UPROPERTY()
     UStateMachineComponent*         StateMachine;
 

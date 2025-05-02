@@ -5,18 +5,29 @@
 #include "Components/ArrowComponent.h"
 #include "SceneComponent/MeshPivotComponent.h"
 #include "ActorComponent/AttachmentLoaderComponent.h"
+#include "Components/CapsuleComponent.h"
+// Copyright 2025 Devhanghae All Rights Reserved.
+#include "GameFramework/CharacterMovementComponent.h"
 
 ACustomCharacter::ACustomCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
     bUseControllerRotationYaw = false;
 
+    GetCapsuleComponent()->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    if (auto* MoveComp = GetCharacterMovement())
+    {
+        MoveComp->GravityScale       = 0.f;
+        MoveComp->bEnablePhysicsInteraction = false;
+    }
+    
     // Setup camera boom (spring arm)
     SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
     SpringArmComp->SetupAttachment(RootComponent);
-    SpringArmComp->TargetArmLength = 390.f;
-    SpringArmComp->SetRelativeLocation(FVector(0, 0, 50));
-    SpringArmComp->SetRelativeRotation(FRotator(-10, 0, 0));
+    SpringArmComp->TargetArmLength = SprintArmLength;
+    SpringArmComp->SetRelativeLocation(FVector(0, 0, 0));
+    SpringArmComp->SetRelativeRotation(FRotator(0, 0, -90));
     SpringArmComp->bUsePawnControlRotation = false;
 
     // Setup camera
@@ -31,7 +42,9 @@ ACustomCharacter::ACustomCharacter()
     // Character mesh
     CustomizingMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CustomizingMesh"));
     CustomizingMesh->SetupAttachment(MeshPivot);
-
+    CustomizingMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+    CustomizingMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    
     // Editor-only debug arrow
     BottomArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("BottomArrow"));
     BottomArrow->SetupAttachment(MeshPivot);

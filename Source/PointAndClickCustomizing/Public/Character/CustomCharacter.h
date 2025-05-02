@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright 2025 Devhanghae All Rights Reserved.
 
 #pragma once
 
@@ -27,6 +27,10 @@ class POINTANDCLICKCUSTOMIZING_API ACustomCharacter : public ACharacter, public 
 public:
 	ACustomCharacter();
 
+	/** Camera showing the customization scene. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Camera")
+	UCameraComponent* CameraComp;
+	
 	/** Load saved attachments after possession or on demand. */
 	virtual void SetupPartsForCharacter(FName CallerID = NAME_None) override;
 
@@ -43,20 +47,15 @@ public:
 			? CustomizingMesh->GetForwardVector() 
 			: FVector::ForwardVector;
 	}
-
+	/** Spring arm for camera positioning. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Camera")
+	USpringArmComponent* SpringArmComp;
+	
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override {}
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override {}
-
-	/** Spring arm for camera positioning. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Camera")
-	USpringArmComponent* SpringArmComp;
-
-	/** Camera showing the customization scene. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Camera")
-	UCameraComponent* CameraComp;
-
+	
 	/** Pivot to rotate the mesh around its base. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Custom")
 	UMeshPivotComponent* MeshPivot;
@@ -72,4 +71,7 @@ protected:
 	/** Component that loads attachments onto the mesh. */
 	UPROPERTY(VisibleAnywhere, Category="CustomizingPlugin|Attachment")
 	UAttachmentLoaderComponent* AttachmentLoader;
+private:
+	float SprintArmLength = 390.f; // Using Orthographic camera (not using)
+
 };

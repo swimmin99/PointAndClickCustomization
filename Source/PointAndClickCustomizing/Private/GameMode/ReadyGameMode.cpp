@@ -1,8 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
+// Copyright 2025 Devhanghae All Rights Reserved.
 #include "GameMode/ReadyGameMode.h"
-
 #include "GameFramework/GameStateBase.h"
 
 
