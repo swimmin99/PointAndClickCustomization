@@ -5,9 +5,6 @@
 </p>
 
  ## 소개 (Introduction)
-본 프로젝트는 스마일게이트 언리얼 교육 프로그램 UNSEEN 2기 시연회 출품 작품의
-멀티플레이어 완성 구현 버전을 플러그인화한 것입니다. 핵심 로직과 기능 시연에 중점을 두었기 때문에, 그 외 부분은 예시 수준으로 구현되어 있습니다.
-
 PointAndClickCustomizing 플러그인은 액터 부착 및 상태 머신을 활용하여 포인트 앤 클릭 방식의 캐릭터 커스터마이징 기능을 제공하는 언리얼 엔진 플러그인입니다.  
 플레이어는 마우스로 아이템을 캐릭터에 부착하고 위치/회전을 조정한 뒤 준비(Ready) 버튼을 눌러 커스터마이징을 확정할 수 있습니다. 각 클라이언트의 준비가 완료되면 자동으로 다음 레벨로 이동됩니다.
 이 플러그인은 커스터마이징 기능을 전용 상태 머신 컴포넌트로 단계를 관리하며, 멀티플레이어 환경에서의 서버-클라이언트 동기화를 지원합니다. 리슨 서버를 지원하도록 제작되었습니다.
@@ -26,10 +23,10 @@ PointAndClickCustomizing 플러그인은 액터 부착 및 상태 머신을 활�
 UCustomizingActorComponent  ←── Gateway API ──→  PlayerController
            │
            ├── UAttachmentPreviewComponent    (프리뷰·스냅·이동·확정)
-           ├── UAttachmentFocusComponent      (클릭 포커스·기록 설정·삭제)
-           ├── UAttachmentRotationComponent   (Arcball 회전·RPC 저장)
-           └── UAttachmentPersistenceComponent (Load/Save RPC)
-           
+           ├── UAttachmentPersistenceComponent (Load/Save RPC)
+           └── UAttachmentFocusComponent      (클릭 포커스·기록 설정·삭제)
+                      └── UAttachmentRotationComponent   (Arcball 회전)
+
 (Base) UCustomizingSubBaseComponent
   └─ lazy-cache: StateMachine / Character / Mesh / FocusComp / DataTable / CurrentRecord
 ```
@@ -94,8 +91,6 @@ UCustomizingActorComponent  ←── Gateway API ──→  PlayerController
 ---
 ## Introduction
 
-This project is a plugin adaptation of the fully implemented multiplayer version of the Smilegate Unreal Education Program UNSEEN Season 2 demo. Since the focus is on showcasing core logic and functionality, everything else is implemented at an illustrative example level.
-
 The **PointAndClickCustomizing** plugin is an Unreal Engine extension that provides point-and-click character customization using attachable actors and a state machine. Players can attach items to their character with the mouse, adjust position and rotation, then press the “Ready” button to finalize customization. Once every client is ready, the game automatically transitions to the next level. This plugin manages customization steps via a dedicated state machine component and supports server-client synchronization in multiplayer (listen server) setups.
 
 ---
@@ -125,9 +120,9 @@ The **PointAndClickCustomizing** plugin is an Unreal Engine extension that provi
 UCustomizingActorComponent  ←── Gateway API ──→  PlayerController
            │
            ├── UAttachmentPreviewComponent    (Preview·Snap·Move·Finalize)
-           ├── UAttachmentFocusComponent      (Click and Focus Actor · Record Properties · Delete Record)
-           ├── UAttachmentRotationComponent   (Arcball Based Actor Rotation · Rotation Data Save with RPC)
-           └── UAttachmentPersistenceComponent (Load/Save RPC)
+           ├── UAttachmentPersistenceComponent (Load/Save RPC)
+           └── UAttachmentFocusComponent      (Click and Focus Actor · Record Properties · Delete Record)
+                      └── UAttachmentRotationComponent   (Arcball Based Actor Rotation)
            
 (Base) UCustomizingSubBaseComponent
   └─ lazy-cache: StateMachine / Character / Mesh / FocusComp / DataTable / CurrentRecord
