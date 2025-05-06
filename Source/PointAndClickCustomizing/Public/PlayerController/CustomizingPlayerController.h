@@ -102,9 +102,6 @@ private:
     // Interpolation target for ortho width.
     float TargetOrthoWidth = 512.f;
 
-    // Mouse state for dragging.
-    bool bIsLeftMouseDown = false;
-    bool bIsRightMouseDown = false;
 
     // Saved positions for drag deltas.
     FVector2D StoredLeftMouseDownPos = FVector2D::ZeroVector;

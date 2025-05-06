@@ -1,6 +1,6 @@
 // Copyright 2025 Devhanghae All Rights Reserved.
 #include "PlayerController/BasePlayerController.h"
-
+#include "GameFramework/Pawn.h"
 #include "PointAndClickCustomizing.h"
 #include "GameFramework/PlayerState.h"
 #include "Engine/World.h"

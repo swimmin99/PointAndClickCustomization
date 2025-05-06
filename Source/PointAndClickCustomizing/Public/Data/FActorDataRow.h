@@ -1,6 +1,7 @@
 ﻿// Copyright 2025 Devhanghae All Rights Reserved.
 #pragma once
 #include "FCommonStat.h"
+#include "GameFramework/Actor.h"
 #include "FActorDataRow.generated.h"
 
 enum class EActorType : uint8;

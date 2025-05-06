@@ -1,5 +1,6 @@
 // Copyright 2025 Devhanghae All Rights Reserved.
 #include "ActorComponent/AttachmentLoaderComponent.h"
+#include "GameFramework/Pawn.h"
 #include "PointAndClickCustomizing.h"      
 #include "Actor/AttachableActor.h"
 #include "Data/FAttachmentRecord.h"

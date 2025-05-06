@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿// Copyright 2025 Devhanghae All Rights Reserved.
+#pragma once
 
 #include "CoreMinimal.h"
 #include "ECustomizingState.generated.h"

@@ -8,16 +8,20 @@
 	"CreatedBy": "DevHangHae",
 	"CreatedByURL": "https://github.com/swimmin99",
 	"DocsURL": "https://drive.google.com/file/d/1uwkzkI8HFPs6cA-kdJhkS2_UI1NiedON/view?usp=sharing",
-	"MarketplaceURL": "",
+	"FabURL": "com.epicgames.launcher://ue/Fab/product/e996583c-6a5c-48d7-82b4-a36fe43cc407",
+	"MarketplaceURL": "https://www.fab.com/portal/listings/e996583c-6a5c-48d7-82b4-a36fe43cc407/preview",
 	"SupportURL": "devhanghae@gmail.com",
-	"EngineVersion": "5.3.0",
+	"EngineVersion": "5.5.0",
 	"CanContainContent": true,
 	"Installed": true,
 	"Modules": [
 		{
 			"Name": "PointAndClickCustomizing",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64"
+			]
 		}
 	],
 	"Plugins": [
