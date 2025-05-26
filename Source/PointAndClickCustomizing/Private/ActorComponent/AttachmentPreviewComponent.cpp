@@ -148,7 +148,7 @@ FVector UAttachmentPreviewComponent::GetMouseIntersectionLoc()
         FVector WorldLoc, WorldDir;
         if (UGameplayStatics::DeprojectScreenToWorld(PC, Screen, WorldLoc, WorldDir))
         {
-            if (auto* Mesh = const_cast<UAttachmentPreviewComponent*>(this)->GetOrCacheMesh())
+            if (auto* Mesh = this->GetOrCacheMesh())
             {
                 const FVector PlanePoint  = Mesh->GetComponentLocation();
                 const FVector PlaneNormal = FVector::CrossProduct(
