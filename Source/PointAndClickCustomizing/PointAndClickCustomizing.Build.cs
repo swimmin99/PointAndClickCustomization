@@ -38,6 +38,7 @@ public class PointAndClickCustomizing : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"UMG",
 				"InputCore",
 				"OnlineSubsystem",
 				"EnhancedInput",

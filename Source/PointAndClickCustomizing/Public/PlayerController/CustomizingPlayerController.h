@@ -7,6 +7,7 @@
 #include "BasePlayerController.h"
 #include "InputActionValue.h"
 #include "Data/FAttachmentRecord.h"
+#include "UI/CustomizingMainHUD.h" 
 #include "CustomizingPlayerController.generated.h"
 
 class UCustomizingActorComponent;
@@ -54,6 +55,10 @@ public:
     /** Send ready-state RPC. */
     UFUNCTION(Server, Reliable, Category="CustomizingPlugin")
     void Server_SendReady(FName PlayerID);
+
+    /** Maini HUD Class  */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+    TSubclassOf<UCustomizingMainHUD> MainHUDWidgetClass;
 
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override

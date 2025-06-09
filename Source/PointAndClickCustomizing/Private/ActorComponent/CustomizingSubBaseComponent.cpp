@@ -56,6 +56,7 @@ USkeletalMeshComponent* UCustomizingSubBaseComponent::GetOrCacheMesh()
     return CachedMesh.Get();
 }
 
+
 UAttachmentFocusComponent* UCustomizingSubBaseComponent::GetOrCacheFocusComponent()
 {
     if (!CachedFocusComp.IsValid())

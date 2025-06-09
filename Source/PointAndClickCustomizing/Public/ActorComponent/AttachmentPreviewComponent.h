@@ -27,7 +27,7 @@ public:
 	void FinalizeAttachment(bool IsLocal);
 	void CancelPreview();
 	void Update(float DeltaTime);
-	void UpdateDebug() const;
+	void UpdateDebug();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SaveAttachmentRecord(const FAttachmentRecord& Record);

@@ -37,6 +37,7 @@ protected:
     UStateMachineComponent*    GetOrCacheStateMachine();
     ACustomCharacter*          GetOrCacheCharacter();
     USkeletalMeshComponent*    GetOrCacheMesh();
+
     UAttachmentFocusComponent* GetOrCacheFocusComponent();
     UDataTable*                GetOrCacheActorDataTable();
     AAttachableActor*          GetFocusedActor();

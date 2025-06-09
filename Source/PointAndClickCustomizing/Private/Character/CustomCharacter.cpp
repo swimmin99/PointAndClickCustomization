@@ -1,3 +1,5 @@
+// Copyright 2025 Devhanghae All Rights Reserved.
+
 #include "Character/CustomCharacter.h"
 #include "PointAndClickCustomizing.h"               
 #include "GameFramework/SpringArmComponent.h"
@@ -6,7 +8,6 @@
 #include "SceneComponent/MeshPivotComponent.h"
 #include "ActorComponent/AttachmentLoaderComponent.h"
 #include "Components/CapsuleComponent.h"
-// Copyright 2025 Devhanghae All Rights Reserved.
 #include "GameFramework/CharacterMovementComponent.h"
 
 ACustomCharacter::ACustomCharacter()
@@ -14,7 +15,7 @@ ACustomCharacter::ACustomCharacter()
     PrimaryActorTick.bCanEverTick = true;
     bUseControllerRotationYaw = false;
 
-    GetCapsuleComponent()->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+    GetCapsuleComponent()->SetCollisionProfileName(FName(TEXT("NoCollision")));
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     if (auto* MoveComp = GetCharacterMovement())
     {
@@ -42,7 +43,7 @@ ACustomCharacter::ACustomCharacter()
     // Character mesh
     CustomizingMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CustomizingMesh"));
     CustomizingMesh->SetupAttachment(MeshPivot);
-    CustomizingMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+    CustomizingMesh->SetCollisionProfileName(FName(TEXT("NoCollision")));
     CustomizingMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     
     // Editor-only debug arrow
