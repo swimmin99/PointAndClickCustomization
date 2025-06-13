@@ -24,13 +24,16 @@ public:
 
 	void LoadExistingAttachments(FName LocalID, UDataTable* ActorDataTable, UObject* OwningActor);
 	bool RequestSpawnByID(FName ActorID);
-	void FinalizeAttachment(bool IsLocal);
+	void FinalizeAttachment(FName PlayerID);
 	void CancelPreview();
 	void Update(float DeltaTime);
 	void UpdateDebug();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_SaveAttachmentRecord(const FAttachmentRecord& Record);
+	void Server_SaveAttachmentRecord(const FAttachmentRecord& Record, FName PlayerID);
+
+	UFUNCTION(Client, Reliable)
+	void Client_ConfirmAddAttachment(bool bWasSuccessful, const FAttachmentRecord& ConfirmedRecord);
 
 
 private:

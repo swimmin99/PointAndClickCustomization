@@ -20,6 +20,7 @@ class POINTANDCLICKCUSTOMIZING_API UAttachmentRotationComponent : public UActorC
 public:
 	UAttachmentRotationComponent();
 
+	
 	void HandleRotation(
 		const FVector2D& PrevScreen,
 		const FVector2D& CurrScreen,
@@ -29,9 +30,17 @@ public:
 	
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_UpdateRotationData(FName ActorID, FName BoneID, const FRotator& NewRotation);
-	
-	void TrySaveRotation(AAttachableActor* TargetActor);
+	void Server_UpdateRotationData(FName ActorID, FName BoneID, const FRotator& NewRotation, FName PlayerID);
+
+	UFUNCTION(Client, Reliable)
+	void Client_ConfirmUpdateRotation(bool bSuccess, FName ActorID, FName BoneID, const FRotator& NewRotation);
+
+	void BeginRotation(AAttachableActor* TargetActor);
+	void EndAndSaveRotation(AAttachableActor* TargetActor, FName PlayerID);
 private:
 	FVector ScreenToArcball(const FVector2D& ScreenPos, const FVector2D& ViewSize) const;
+	
+	FRotator OriginalRotation;
+	FName CurrentRotatingActorID;
+	FName CurrentRotatingBoneName;
 };

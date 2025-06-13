@@ -24,7 +24,7 @@ public:
 	 * @param PlayerID  Identifier of the player.
 	 * @param Rec       The attachment record to add.
 	 */
-	void AddAttachment(FName PlayerID, const FAttachmentRecord& Rec);
+	bool AddAttachment(FName PlayerID, const FAttachmentRecord& Rec);
 
 	/**
 	 * Remove all records matching ActorID & BoneName for this player.
@@ -32,7 +32,7 @@ public:
 	 * @param ActorID   The attachment's ActorID to remove.
 	 * @param BoneName  The socket/bone name to match.
 	 */
-	void RemoveAttachment(FName PlayerID, FName ActorID, FName BoneName);
+	bool RemoveAttachment(FName ActorID, FName BoneName, FName PlayerID);
 
 	/**
 	 * Retrieve all stored attachments for this player.

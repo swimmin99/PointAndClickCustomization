@@ -1,23 +1,23 @@
 // Copyright 2025 Devhanghae All Rights Reserved.
-#include "ActorComponent/CustomizingActorComponent.h"
+#include "ActorComponent/CustomizingGatewayComponent.h"
 #include "ActorComponent/AttachmentPreviewComponent.h"
 #include "ActorComponent/AttachmentFocusComponent.h"
 #include "ActorComponent/StateMachineComponent.h"
 #include "Character/CustomCharacter.h"
+#include "Data/AttachmentDataStore.h"
 #include "GameFramework/Actor.h"
 
-UCustomizingActorComponent::UCustomizingActorComponent()
+UCustomizingGatewayComponent::UCustomizingGatewayComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
 
     PreviewComp     = CreateDefaultSubobject<UAttachmentPreviewComponent>(TEXT("PreviewComp"));
     FocusComp       = CreateDefaultSubobject<UAttachmentFocusComponent>(TEXT("FocusComp"));
-
     StateMachine    = CreateDefaultSubobject<UStateMachineComponent>(TEXT("StateMachine"));
 }
 
 
-void UCustomizingActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UCustomizingGatewayComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
     
@@ -33,53 +33,56 @@ void UCustomizingActorComponent::TickComponent(float DeltaTime, ELevelTick TickT
     PreviewComp->Update(DeltaTime);
 }
 
-void UCustomizingActorComponent::SetCurrentRecord(const FAttachmentRecord& Record)
+void UCustomizingGatewayComponent::SetCurrentRecord(const FAttachmentRecord& Record)
 {
     FocusComp->SetCurrentRecord(Record);
 }
 
-const FAttachmentRecord& UCustomizingActorComponent::GetCurrentRecord() const
+const FAttachmentRecord& UCustomizingGatewayComponent::GetCurrentRecord() const
 {
     return FocusComp->GetCurrentRecord();
 }
 
-bool UCustomizingActorComponent::RequestSpawnByID(FName ActorID)
+bool UCustomizingGatewayComponent::RequestSpawnByID(FName ActorID)
 {
     return PreviewComp->RequestSpawnByID(ActorID);
 }
 
-void UCustomizingActorComponent::FinalizeAttachment()
+void UCustomizingGatewayComponent::FinalizeAttachment(FName PlayerID)
 {
-    PreviewComp->FinalizeAttachment(IsOwnerLocal());
-
+    if (IsOwnerLocal())
+    {
+        PreviewComp->FinalizeAttachment(PlayerID);
+    } 
 }
 
-void UCustomizingActorComponent::CancelPreview()
+void UCustomizingGatewayComponent::CancelPreview()
 {
     PreviewComp->CancelPreview();
 }
 
-AAttachableActor* UCustomizingActorComponent::GetFocusedActor()
+AAttachableActor* UCustomizingGatewayComponent::GetFocusedActor()
 {
     return FocusComp->GetFocusedActor();
 }
 
-bool UCustomizingActorComponent::TryFocusAttachedActor()
+bool UCustomizingGatewayComponent::TryFocusAttachedActor()
 {
     return FocusComp->TryFocusAttachedActor();
 }
 
-void UCustomizingActorComponent::CancelFocus()
+void UCustomizingGatewayComponent::CancelFocus()
 {
     FocusComp->CancelFocus();
 }
 
-void UCustomizingActorComponent::DeleteFocusedActor(FName LocalID)
+void UCustomizingGatewayComponent::DeleteFocusedActor(FName PlayerID)
 {
-    FocusComp->DeleteFocusedActor(LocalID);
+    FocusComp->DeleteFocusedActor(PlayerID);
 }
 
-void UCustomizingActorComponent::RotateFocusedActor(
+
+void UCustomizingGatewayComponent::RotateFocusedActor(
     const FVector2D& PrevScreen,
     const FVector2D& CurrScreen,
     const FVector2D& ViewSize,
@@ -88,17 +91,17 @@ void UCustomizingActorComponent::RotateFocusedActor(
     FocusComp->RotateFocusedActor(PrevScreen, CurrScreen, ViewSize, Speed);
 }
 
-void UCustomizingActorComponent::TrySaveRotation()
+void UCustomizingGatewayComponent::TrySaveRotation(FName PlayerID)
 {
-    FocusComp->EndRotate();
+    FocusComp->EndRotate(PlayerID);
 }
 
-ECustomizingState UCustomizingActorComponent::GetState() const
+ECustomizingState UCustomizingGatewayComponent::GetState() const
 {
     return StateMachine->GetState();
 }
 
-void UCustomizingActorComponent::LoadExistingAttachments(FName LocalID)
+void UCustomizingGatewayComponent::LoadExistingAttachments(FName LocalID)
 {
   
        PreviewComp->LoadExistingAttachments(
@@ -108,7 +111,7 @@ void UCustomizingActorComponent::LoadExistingAttachments(FName LocalID)
  }
 
 
-bool UCustomizingActorComponent::IsOwnerLocal() const
+bool UCustomizingGatewayComponent::IsOwnerLocal() const
 {
     if (!bOwnerLocalCacheInitialized)
     {

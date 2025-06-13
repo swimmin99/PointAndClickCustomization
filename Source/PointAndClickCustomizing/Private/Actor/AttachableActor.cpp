@@ -19,14 +19,14 @@ void AAttachableActor::BeginPlay()
 }
 
 AAttachableActor* AAttachableActor::SpawnAttachment(
-    const FAttachmentRecord& Record,
+    const FAttachmentRecord& TemplateActorInfo,
     USkeletalMeshComponent* Skel,
     UDataTable* ActorDataTable,
     UObject* WorldContext)
 {
     UE_LOG(LogCustomizingPlugin, Log,
         TEXT("SpawnAttachment - Begin for ActorID=%s Bone=%s"),
-        *Record.ActorID.ToString(), *Record.BoneName.ToString());
+        *TemplateActorInfo.ActorID.ToString(), *TemplateActorInfo.BoneName.ToString());
 
     if (!Skel || !ActorDataTable || !WorldContext)
     {
@@ -45,12 +45,12 @@ AAttachableActor* AAttachableActor::SpawnAttachment(
 
     // Find DataTable row
     const FActorDataRow* Row = ActorDataTable->FindRow<FActorDataRow>(
-        Record.ActorID, TEXT("SpawnAttachment"));
+        TemplateActorInfo.ActorID, TEXT("SpawnAttachment"));
     if (!Row)
     {
         UE_LOG(LogCustomizingPlugin, Warning,
             TEXT("SpawnAttachment - No DataTable row for %s"),
-            *Record.ActorID.ToString());
+            *TemplateActorInfo.ActorID.ToString());
         return nullptr;
     }
 
@@ -60,7 +60,7 @@ AAttachableActor* AAttachableActor::SpawnAttachment(
     {
         UE_LOG(LogCustomizingPlugin, Error,
             TEXT("SpawnAttachment - SpawnActor failed for %s"),
-            *Record.ActorID.ToString());
+            *TemplateActorInfo.ActorID.ToString());
         return nullptr;
     }
 
@@ -74,8 +74,8 @@ AAttachableActor* AAttachableActor::SpawnAttachment(
     }
 
     // Initialize IDs
-    Att->ActorID = Record.ActorID;
-    Att->BoneName  = Record.BoneName;
+    Att->ActorID = TemplateActorInfo.ActorID;
+    Att->BoneName  = TemplateActorInfo.BoneName;
     UE_LOG(LogCustomizingPlugin, Log,
         TEXT("SpawnAttachment - Set ActorID=%s BoneID=%s"),
         *Att->ActorID.ToString(), *Att->BoneName.ToString());
@@ -84,8 +84,8 @@ AAttachableActor* AAttachableActor::SpawnAttachment(
     Att->AttachToComponent(
         Skel,
         FAttachmentTransformRules::KeepRelativeTransform, 
-        Record.BoneName);
-    Att->AddActorWorldRotation(Record.ActorRotation);
+        TemplateActorInfo.BoneName);
+    Att->AddActorWorldRotation(TemplateActorInfo.ActorRotation);
 
 #if WITH_EDITOR
     const FVector Loc = Att->GetActorLocation();

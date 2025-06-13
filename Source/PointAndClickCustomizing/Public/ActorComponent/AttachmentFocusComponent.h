@@ -29,13 +29,20 @@ public:
 	                        float Speed);
 	AAttachableActor* GetFocusedActor() const { return FocusedActor; }
 	AAttachableActor* GetCachedCanFocusActor() const { return CachedCanFocusActor; }
-	void EndRotate();
+	void EndRotate(FName PlayerID);
 	bool TryFocusAttachedActor();
 	void CancelFocus();
-	void DeleteFocusedActor(FName LocalID);
+	void DeleteFocusedActor(FName PlayerKey);
 	void SetCurrentRecord(const FAttachmentRecord& InRecord) { CurrentRecord = InRecord; }
 	const FAttachmentRecord& GetCurrentRecord() const { return CurrentRecord; }
-
+	/** Request server to remove the focused attachment. */
+	
+	UFUNCTION(Server, Reliable, Category="CustomizingPlugin")
+	void Server_RequestRemoveAttachment(FName ActorID, FName BoneID, FName PlayerID);
+	
+	UFUNCTION(Client, Reliable)
+	void Client_ConfirmRemoveAttachment(bool bWasSuccessful, FName ActorID, FName BoneID);
+	
 protected:
 	
 private:

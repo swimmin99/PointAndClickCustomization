@@ -16,33 +16,29 @@ UAttachmentDataStore* UAttachmentDataStore::Get()
     return Inst;
 }
 
-void UAttachmentDataStore::AddAttachment(FName PlayerID, const FAttachmentRecord& Rec)
+bool UAttachmentDataStore::AddAttachment(FName PlayerID, const FAttachmentRecord& Rec)
 {
-    // Log and early return if invalid
     if (PlayerID.IsNone())
     {
         UE_LOG(LogCustomizingPlugin, Warning,
             TEXT("AddAttachment - Invalid PlayerID"));
-        return;
+        return false;
     }
 
     DataMap.FindOrAdd(PlayerID).Add(Rec);
     UE_LOG(LogCustomizingPlugin, Log,
-        TEXT("AddAttachment - PlayerID=%s ActorID=%s BoneName=%s"),
-        *PlayerID.ToString(), *Rec.ActorID.ToString(), *Rec.BoneName.ToString());
+        TEXT("AddAttachment - PlayerID=%s ActorID=%s BoneName=%s"), *PlayerID.ToString(), *Rec.ActorID.ToString(), *Rec.BoneName.ToString());
+    return true;
 }
 
-void UAttachmentDataStore::RemoveAttachment(
-    FName PlayerID,
-    FName ActorID,
-    FName BoneName)
+bool UAttachmentDataStore::RemoveAttachment(FName ActorID, FName BoneName, FName PlayerID)
 {
     auto* Arr = DataMap.Find(PlayerID);
     if (!Arr)
     {
         UE_LOG(LogCustomizingPlugin, Warning,
             TEXT("RemoveAttachment - No records for PlayerID=%s"), *PlayerID.ToString());
-        return;
+        return false;
     }
 
     const int32 Before = Arr->Num();
@@ -56,6 +52,7 @@ void UAttachmentDataStore::RemoveAttachment(
         TEXT("RemoveAttachment - PlayerID=%s ActorID=%s BoneName=%s Removed=%d"),
         *PlayerID.ToString(), *ActorID.ToString(), *BoneName.ToString(),
         Before - After);
+    return true;
 }
 
 const TArray<FAttachmentRecord>& UAttachmentDataStore::GetAttachments(FName PlayerID) const

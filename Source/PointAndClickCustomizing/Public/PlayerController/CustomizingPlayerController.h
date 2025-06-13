@@ -10,7 +10,7 @@
 #include "UI/CustomizingMainHUD.h" 
 #include "CustomizingPlayerController.generated.h"
 
-class UCustomizingActorComponent;
+class UCustomizingGatewayComponent;
 class UInputMappingContext;
 class UInputAction;
 
@@ -34,16 +34,8 @@ public:
     
     /** Manages preview, focus, attach logic. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CustomizingPlugin")
-    UCustomizingActorComponent* CustomizingComp;
-
-    /** Request server to add an attachment record. */
-    UFUNCTION(Server, Reliable, Category="CustomizingPlugin")
-    void Server_RequestAddAttachment(const FAttachmentRecord& Rec, FName PlayerID);
-
-    /** Request server to remove the focused attachment. */
-    UFUNCTION(Server, Reliable, Category="CustomizingPlugin")
-    void Server_RequestRemoveAttachment(FName ActorID, FName BoneID, FName PlayerID);
-
+    UCustomizingGatewayComponent* CustomizingComp;
+    
     /** Spawn a preview actor for the given ID. */
     UFUNCTION(BlueprintCallable, Category="CustomizingPlugin")
     void TrySpawningAttachableActor(FName ID);

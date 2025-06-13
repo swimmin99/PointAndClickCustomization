@@ -2,7 +2,7 @@
 #include "ActorComponent/CustomizingSubBaseComponent.h"
 #include "ActorComponent/StateMachineComponent.h"
 #include "ActorComponent/AttachmentFocusComponent.h"
-#include "ActorComponent/CustomizingActorComponent.h"
+#include "ActorComponent/CustomizingGatewayComponent.h"
 #include "Character/CustomCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/DataTable.h"
@@ -72,7 +72,7 @@ UDataTable* UCustomizingSubBaseComponent::GetOrCacheActorDataTable()
 {
     if (!CachedActorTable.IsValid())
     {
-        if (auto* Gate = GetOwner()->FindComponentByClass<UCustomizingActorComponent>())
+        if (auto* Gate = GetOwner()->FindComponentByClass<UCustomizingGatewayComponent>())
         {
             CachedActorTable = Gate->GetActorDataTable();
             if (!CachedActorTable.IsValid())

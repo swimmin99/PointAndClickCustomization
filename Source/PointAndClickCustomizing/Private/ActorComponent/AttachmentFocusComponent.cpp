@@ -9,6 +9,7 @@
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
 #include "Character/CustomCharacter.h"
+#include "Data/AttachmentDataStore.h"
 
 UAttachmentFocusComponent::UAttachmentFocusComponent()
 {
@@ -72,9 +73,9 @@ void UAttachmentFocusComponent::RotateFocusedActor(
     }
 }
 
-void UAttachmentFocusComponent::EndRotate()
+void UAttachmentFocusComponent::EndRotate(FName PlayerID)
 {
-    RotationComp->TrySaveRotation(GetFocusedActor());
+    RotationComp->EndAndSaveRotation(GetFocusedActor(), PlayerID);
 }
 
 bool UAttachmentFocusComponent::TryFocusAttachedActor()
@@ -106,18 +107,53 @@ void UAttachmentFocusComponent::CancelFocus()
     GetOrCacheStateMachine()->SetState(ECustomizingState::Idle);
 }
 
-void UAttachmentFocusComponent::DeleteFocusedActor(FName LocalID)
+void UAttachmentFocusComponent::DeleteFocusedActor(FName PlayerKey)
 {
+    if (GetOrCacheStateMachine()->GetState() != ECustomizingState::ActorFocused || !FocusedActor)
+    {
+        UE_LOG(LogCustomizingPlugin, Warning, TEXT("DeleteFocusedActor - No focused actor to delete."));
+        return;
+    }
+
+    Server_RequestRemoveAttachment(FocusedActor->ActorID, FocusedActor->BoneName, PlayerKey);
+}
+
+void UAttachmentFocusComponent::Client_ConfirmRemoveAttachment_Implementation(bool bWasSuccessful, FName ActorID, FName BoneID)
+{
+    if(!bWasSuccessful)
+    {
+        return;
+    }
     if (GetOrCacheStateMachine()->GetState() != ECustomizingState::ActorFocused
         || !FocusedActor)
     {
         return;
     }
-
+    if (ActorID != FocusedActor->ActorID || BoneID != FocusedActor->BoneName)
+    {
+        UE_LOG(LogCustomizingPlugin, Warning, TEXT("Client_ConfirmRemoveAttachment - Mismatched ActorID or BoneID for"));
+        return;
+    }
     FocusedActor->Destroy();
     GetOrCacheStateMachine()->SetState(ECustomizingState::Idle);
     ZoomOut();
 }
+
+void UAttachmentFocusComponent::Server_RequestRemoveAttachment_Implementation(FName ActorID, FName BoneID, FName PlayerID)
+{
+    const bool bSuccess = UAttachmentDataStore::Get()->RemoveAttachment(ActorID, BoneID, PlayerID);
+    Client_ConfirmRemoveAttachment(bSuccess, ActorID, BoneID);
+    
+    if (bSuccess)
+    {
+        UE_LOG(LogCustomizingPlugin, Log, TEXT("Server_RequestRemoveAttachment - Removed attachment successfully."));
+    }
+    else
+    {
+        UE_LOG(LogCustomizingPlugin, Warning, TEXT("Server_RequestRemoveAttachment - Failed to remove attachment from data store."));
+    }
+}
+
 void UAttachmentFocusComponent::ZoomIn()
 {
     if (bHasStoredCameraState) return;

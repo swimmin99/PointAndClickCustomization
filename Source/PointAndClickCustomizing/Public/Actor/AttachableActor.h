@@ -31,14 +31,14 @@ public:
     /**
      * Spawn an attachable actor, attach it to Skel at the recorded bone,
      * and restore its relative rotation.
-     * @param Record            Saved attachment data.
+     * @param TemplateActorInfo            Saved attachment data.
      * @param Skel              Target skeletal mesh component.
      * @param ActorDataTable    DataTable mapping ActorID to Blueprint class.
      * @param WorldContext      Context for getting UWorld.
      * @return The spawned AAttachableActor, or nullptr on failure.
      */
     static AAttachableActor* SpawnAttachment(
-        const FAttachmentRecord& Record,
+        const FAttachmentRecord& TemplateActorInfo,
         USkeletalMeshComponent* Skel,
         UDataTable* ActorDataTable,
         UObject* WorldContext

@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "Data/FAttachmentRecord.h"
 #include "Types/ECustomizingState.h"
-#include "CustomizingActorComponent.generated.h"
+#include "CustomizingGatewayComponent.generated.h"
 
 class UAttachmentPreviewComponent;
 class UAttachmentFocusComponent;
@@ -19,12 +19,12 @@ class UStateMachineComponent;
  * Communicates with the sub-components and PlayerController to handle the customizing process.
  */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class POINTANDCLICKCUSTOMIZING_API UCustomizingActorComponent : public UActorComponent
+class POINTANDCLICKCUSTOMIZING_API UCustomizingGatewayComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
-    UCustomizingActorComponent();
+    UCustomizingGatewayComponent();
     // === Record Getter/Setter ===
     void SetCurrentRecord(const FAttachmentRecord& Record);
     const FAttachmentRecord& GetCurrentRecord() const;
@@ -34,7 +34,7 @@ public:
     bool RequestSpawnByID(FName ActorID);
 
     UFUNCTION(BlueprintCallable, Category="Customizing")
-    void FinalizeAttachment();
+    void FinalizeAttachment(FName PlayerID);
 
     UFUNCTION(BlueprintCallable, Category="Customizing")
     void CancelPreview();
@@ -50,8 +50,8 @@ public:
     void CancelFocus();
 
     UFUNCTION(BlueprintCallable, Category="Customizing")
-    void DeleteFocusedActor(FName LocalID);
-
+    void DeleteFocusedActor(FName PlayerID);
+    
     // === Rotation ===
     UFUNCTION(BlueprintCallable, Category="Customizing")
     void RotateFocusedActor(
@@ -61,7 +61,7 @@ public:
         float Speed);
 
     UFUNCTION(BlueprintCallable, Category="Customizing")
-    void TrySaveRotation();
+    void TrySaveRotation(FName PlayerID);
 
     // === State Query ===
     UFUNCTION(BlueprintCallable, Category="Customizing")

@@ -2,7 +2,7 @@
 #include "ActorComponent/AttachmentRotationComponent.h"
 
 #include "Actor/AttachableActor.h"
-#include "ActorComponent/CustomizingActorComponent.h"
+#include "ActorComponent/CustomizingGatewayComponent.h"
 #include "ActorComponent/StateMachineComponent.h"
 #include "Data/AttachmentDataStore.h"
 #include "PlayerController/CustomizingPlayerController.h"
@@ -35,29 +35,78 @@ void UAttachmentRotationComponent::HandleRotation(
     }
 }
 
-void UAttachmentRotationComponent::TrySaveRotation(AAttachableActor* TargetActor)
+
+void UAttachmentRotationComponent::Client_ConfirmUpdateRotation_Implementation(bool bSuccess, FName ActorID, FName BoneID, const FRotator& ConfirmedRotation)
+{
+    if (bSuccess)
+    {
+        UE_LOG(LogCustomizingPlugin, Log, TEXT("[Client] Rotation for %s was successfully saved on server."), *ActorID.ToString());
+        return; 
+    }
+
+    UE_LOG(LogCustomizingPlugin, Warning, TEXT("[Client] Server rejected rotation update for ActorID: %s. Attempting to roll back."), *ActorID.ToString());
+
+    if (ActorID != CurrentRotatingActorID || BoneID != CurrentRotatingBoneName)
+    {
+        UE_LOG(LogCustomizingPlugin, Error, TEXT("[Client] Mismatched actor response for rotation rollback. Expected '%s', got '%s'."), *CurrentRotatingActorID.ToString(), *ActorID.ToString());
+        return;
+    }
+
+    if (auto* Gateway = GetOwner()->FindComponentByClass<UCustomizingGatewayComponent>())
+    {
+        if (AAttachableActor* FocusedActor = Gateway->GetFocusedActor())
+        {
+            if (FocusedActor->ActorID == ActorID)
+            {
+                UE_LOG(LogCustomizingPlugin, Log, TEXT("[Client] Reverting rotation of %s to original value: %s"), *ActorID.ToString(), *OriginalRotation.ToString());
+                FocusedActor->SetActorRotation(OriginalRotation);
+            }
+            else
+            {
+                UE_LOG(LogCustomizingPlugin, Warning, TEXT("[Client] Focused actor '%s' does not match rollback target '%s'."), *FocusedActor->ActorID.ToString(), *ActorID.ToString());
+            }
+        }
+        else
+        {
+            UE_LOG(LogCustomizingPlugin, Warning, TEXT("[Client] Could not get focused actor to perform rollback."));
+        }
+    }
+}
+
+void UAttachmentRotationComponent::BeginRotation(AAttachableActor* TargetActor)
+{
+    if (TargetActor)
+    {
+        OriginalRotation = TargetActor->GetActorRotation();
+        CurrentRotatingActorID = TargetActor->ActorID;
+        CurrentRotatingBoneName = TargetActor->BoneName;
+        UE_LOG(LogCustomizingPlugin, Log, TEXT("BeginRotation: Stored original rotation %s for %s"), *OriginalRotation.ToString(), *TargetActor->ActorID.ToString());
+    }
+}
+
+void UAttachmentRotationComponent::EndAndSaveRotation(AAttachableActor* TargetActor, FName PlayerID)
 {
     if (AAttachableActor* Actor = TargetActor)
     {
-        if (auto* Gateway = GetOwner()->FindComponentByClass<UCustomizingActorComponent>())
+        if (auto* Gateway = GetOwner()->FindComponentByClass<UCustomizingGatewayComponent>())
         {
             Server_UpdateRotationData(
                 Actor->ActorID,
                 Actor->BoneName,
-                Actor->GetActorRotation()
+                Actor->GetActorRotation(),
+                PlayerID
             );
         }
     }
 }
 
 void UAttachmentRotationComponent::Server_UpdateRotationData_Implementation(FName ActorID, FName BoneID,
-    const FRotator& NewRotation)
+    const FRotator& NewRotation, FName PlayerID)
 {
+    bool bSuccess = false; 
     if (auto* Store = UAttachmentDataStore::Get())
     {
-        if (auto* PC = Cast<ACustomizingPlayerController>(GetOwner()))
-        {
-            TArray<FAttachmentRecord>& Records = Store->DataMap.FindOrAdd(PC->GetPlayerKey());
+            TArray<FAttachmentRecord>& Records = Store->DataMap.FindOrAdd(PlayerID);
             for (FAttachmentRecord& Rec : Records)
             {
                 if (Rec.ActorID == ActorID && Rec.BoneName == BoneID)
@@ -66,28 +115,24 @@ void UAttachmentRotationComponent::Server_UpdateRotationData_Implementation(FNam
                     UE_LOG(LogCustomizingPlugin, Log,
                         TEXT("%s::UpdateAttachmentRotation - PlayerID=%s, ActorID=%s, BoneID=%s rotation renewd -> %s"),
                         *GetName(),
-                        *PC->GetPlayerKey().ToString(),
+                        *BoneID.ToString(),
                         *ActorID.ToString(),
                         *BoneID.ToString(),
                         *NewRotation.ToString()
                     );
-                    return;
+                    bSuccess = true;
+                    break;
                 }
             }
-
-            UE_LOG(LogCustomizingPlugin, Warning,
-                TEXT("%s::UpdateAttachmentRotation - No actor found during the search for updating rotation. PlayerID=%s, ActorID=%s, BoneID=%s"),
-                *GetName(),
-                *PC->GetPlayerKey().ToString(),
-                *ActorID.ToString(),
-                *BoneID.ToString()
-            );
+        
+            Client_ConfirmUpdateRotation(bSuccess, ActorID, BoneID, NewRotation);
         }
-    }
 }
 
+
+
 bool UAttachmentRotationComponent::Server_UpdateRotationData_Validate(FName ActorID, FName BoneID,
-    const FRotator& NewRotation)
+    const FRotator& NewRotation, FName PlayerID)
 {
     return ActorID != NAME_None && BoneID != NAME_None;
 }

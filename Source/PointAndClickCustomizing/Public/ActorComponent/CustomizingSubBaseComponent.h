@@ -10,7 +10,7 @@ class UStateMachineComponent;
 class ACustomCharacter;
 class USkeletalMeshComponent;
 class UAttachmentFocusComponent;
-class UCustomizingActorComponent;
+class UCustomizingGatewayComponent;
 class UDataTable;
 class AAttachableActor;
 
