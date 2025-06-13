@@ -44,13 +44,6 @@ public:
     UFUNCTION(Server, Reliable, Category="CustomizingPlugin")
     void Server_RequestRemoveAttachment(FName ActorID, FName BoneID, FName PlayerID);
 
-    // ---- Client RPCs send client the result for following tasks ----
-    UFUNCTION(Client, Reliable)
-    void Client_ConfirmAddAttachment(bool bWasSuccessful, const FAttachmentRecord& ConfirmedRecord);
-
-    UFUNCTION(Client, Reliable)
-    void Client_ConfirmRemoveAttachment(bool bWasSuccessful, FName ActorID, FName BoneID);
-
     /** Spawn a preview actor for the given ID. */
     UFUNCTION(BlueprintCallable, Category="CustomizingPlugin")
     void TrySpawningAttachableActor(FName ID);

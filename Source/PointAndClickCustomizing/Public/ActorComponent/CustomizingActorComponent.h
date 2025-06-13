@@ -34,10 +34,7 @@ public:
     bool RequestSpawnByID(FName ActorID);
 
     UFUNCTION(BlueprintCallable, Category="Customizing")
-    bool GetAttachmentRecordDataFromGateway(FAttachmentRecord& Rec);
-
-    UFUNCTION(BlueprintCallable, Category = "Customizing")
-    void FinalizeAttachmentByAttachingInClient(bool isLocal);
+    void FinalizeAttachment();
 
     UFUNCTION(BlueprintCallable, Category="Customizing")
     void CancelPreview();

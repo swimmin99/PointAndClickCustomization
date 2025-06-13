@@ -49,15 +49,26 @@ bool UAttachmentPreviewComponent::RequestSpawnByID(FName ActorID)
     return true;
 }
 
-bool UAttachmentPreviewComponent::GetRecordDataForCurrentActor(bool IsLocal, FAttachmentRecord& Rec)
+void UAttachmentPreviewComponent::FinalizeAttachment(bool IsLocal)
 {
     if (GetOrCacheStateMachine()->GetState() != ECustomizingState::ActorSnapped
         || !PreviewActor)
     {
-         return false;
+        return;
     }
+
+    if (auto* Mesh = GetOrCacheMesh())
+    {
+        PreviewActor->AttachToComponent(
+            Mesh,
+            FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+            CurrentSnapBone);
+        PreviewActor->SetActorEnableCollision(true);
+    }
+
     if(IsLocal)
     {
+        FAttachmentRecord Rec;
         Rec.ActorID          = Cast<AAttachableActor>(PreviewActor)->ActorID;
         Rec.BoneName         = CurrentSnapBone;
         FTransform SockT     = GetOrCacheMesh()->GetSocketTransform(CurrentSnapBone, RTS_Component);
@@ -67,27 +78,14 @@ bool UAttachmentPreviewComponent::GetRecordDataForCurrentActor(bool IsLocal, FAt
         AAttachableActor* TargetActor = Cast<AAttachableActor>(PreviewActor);;
         TargetActor->ActorID = Rec.ActorID;
         TargetActor->BoneName = Rec.BoneName;
-                
-
-        return true;
+        
+        Server_SaveAttachmentRecord(CurrentRecord);
     }
-    return false;
+
+    
+    GetOrCacheStateMachine()->SetState(ECustomizingState::Idle);
+    PreviewActor = nullptr;
 }
-
-void UAttachmentPreviewComponent::ApplyAttachmentInClient(bool IsLocal) {
-    if (auto* Mesh = GetOrCacheMesh())
-    {
-        PreviewActor->AttachToComponent(
-            Mesh,
-            FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-            CurrentSnapBone);
-        PreviewActor->SetActorEnableCollision(true);
-
-        GetOrCacheStateMachine()->SetState(ECustomizingState::Idle);
-        PreviewActor = nullptr;
-    }
-}
-
 
 void UAttachmentPreviewComponent::CancelPreview()
 {
