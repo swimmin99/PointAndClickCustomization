@@ -48,11 +48,16 @@ bool UCustomizingActorComponent::RequestSpawnByID(FName ActorID)
     return PreviewComp->RequestSpawnByID(ActorID);
 }
 
-void UCustomizingActorComponent::FinalizeAttachment()
+bool UCustomizingActorComponent::GetAttachmentRecordDataFromGateway(FAttachmentRecord& Rec)
 {
-    PreviewComp->FinalizeAttachment(IsOwnerLocal());
-
+    return PreviewComp->GetRecordDataForCurrentActor(IsOwnerLocal(), Rec);
 }
+
+void UCustomizingActorComponent::FinalizeAttachmentByAttachingInClient(bool isLocal)
+{
+    PreviewComp->ApplyAttachmentInClient(IsOwnerLocal());
+}
+
 
 void UCustomizingActorComponent::CancelPreview()
 {

@@ -16,23 +16,24 @@ UAttachmentDataStore* UAttachmentDataStore::Get()
     return Inst;
 }
 
-void UAttachmentDataStore::AddAttachment(FName PlayerID, const FAttachmentRecord& Rec)
+bool UAttachmentDataStore::AddAttachment(FName PlayerID, const FAttachmentRecord& Rec)
 {
-    // Log and early return if invalid
     if (PlayerID.IsNone())
     {
         UE_LOG(LogCustomizingPlugin, Warning,
             TEXT("AddAttachment - Invalid PlayerID"));
-        return;
+        return false; 
     }
 
     DataMap.FindOrAdd(PlayerID).Add(Rec);
     UE_LOG(LogCustomizingPlugin, Log,
         TEXT("AddAttachment - PlayerID=%s ActorID=%s BoneName=%s"),
         *PlayerID.ToString(), *Rec.ActorID.ToString(), *Rec.BoneName.ToString());
+
+    return true;
 }
 
-void UAttachmentDataStore::RemoveAttachment(
+bool UAttachmentDataStore::RemoveAttachment(
     FName PlayerID,
     FName ActorID,
     FName BoneName)
@@ -42,20 +43,32 @@ void UAttachmentDataStore::RemoveAttachment(
     {
         UE_LOG(LogCustomizingPlugin, Warning,
             TEXT("RemoveAttachment - No records for PlayerID=%s"), *PlayerID.ToString());
-        return;
+        return false; 
     }
 
     const int32 Before = Arr->Num();
     Arr->RemoveAll([ActorID, BoneName](const FAttachmentRecord& R)
-    {
-        return (R.ActorID == ActorID && R.BoneName == BoneName);
-    });
+        {
+            return (R.ActorID == ActorID && R.BoneName == BoneName);
+        });
 
     const int32 After = Arr->Num();
-    UE_LOG(LogCustomizingPlugin, Log,
-        TEXT("RemoveAttachment - PlayerID=%s ActorID=%s BoneName=%s Removed=%d"),
-        *PlayerID.ToString(), *ActorID.ToString(), *BoneName.ToString(),
-        Before - After);
+
+    if (Before > After)
+    {
+        UE_LOG(LogCustomizingPlugin, Log,
+            TEXT("RemoveAttachment - PlayerID=%s ActorID=%s BoneName=%s Removed=%d"),
+            *PlayerID.ToString(), *ActorID.ToString(), *BoneName.ToString(),
+            Before - After);
+        return true;
+    }
+    else
+    {
+        UE_LOG(LogCustomizingPlugin, Warning,
+            TEXT("RemoveAttachment - No matching attachment found to remove for PlayerID=%s, ActorID=%s, BoneName=%s"),
+            *PlayerID.ToString(), *ActorID.ToString(), *BoneName.ToString());
+        return false;
+    }
 }
 
 const TArray<FAttachmentRecord>& UAttachmentDataStore::GetAttachments(FName PlayerID) const

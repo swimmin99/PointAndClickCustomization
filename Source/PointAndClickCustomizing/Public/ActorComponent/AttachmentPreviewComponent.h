@@ -24,7 +24,8 @@ public:
 
 	void LoadExistingAttachments(FName LocalID, UDataTable* ActorDataTable, UObject* OwningActor);
 	bool RequestSpawnByID(FName ActorID);
-	void FinalizeAttachment(bool IsLocal);
+	bool GetRecordDataForCurrentActor(bool IsLocal, FAttachmentRecord& Rec);
+	void ApplyAttachmentInClient(bool IsLocal);
 	void CancelPreview();
 	void Update(float DeltaTime);
 	void UpdateDebug();
