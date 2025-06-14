@@ -121,15 +121,14 @@ The **PointAndClickCustomizing** plugin is an Unreal Engine extension that provi
 
 ---
 ```txt
+UAttachmentDataStore
+           │
 UCustomizingActorComponent  ←── Gateway API ──→  PlayerController
            │
            ├── UAttachmentPreviewComponent    (Preview·Snap·Move·Finalize)
            ├── UAttachmentPersistenceComponent (Load/Save RPC)
            └── UAttachmentFocusComponent      (Click and Focus Actor · Record Properties · Delete Record)
-                      └── UAttachmentRotationComponent   (Arcball Based Actor Rotation)
-           
-(Base) UCustomizingSubBaseComponent
-  └─ lazy-cache: StateMachine / Character / Mesh / FocusComp / DataTable / CurrentRecord
+           └── UAttachmentRotationComponent   (Rotation · Save)
 ```
 ## Details
 
