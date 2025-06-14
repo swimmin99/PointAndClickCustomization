@@ -25,15 +25,14 @@ PointAndClickCustomizing 플러그인은 액터 부착 및 상태 머신을 활�
 ## 아키텍쳐
 
 ```txt
+UAttachmentDataStore
+           │
 UCustomizingActorComponent  ←── Gateway API ──→  PlayerController
            │
            ├── UAttachmentPreviewComponent    (프리뷰·스냅·이동·확정)
            ├── UAttachmentPersistenceComponent (Load/Save RPC)
            └── UAttachmentFocusComponent      (클릭 포커스·기록 설정·삭제)
-                      └── UAttachmentRotationComponent   (Arcball 회전)
-
-(Base) UCustomizingSubBaseComponent
-  └─ lazy-cache: StateMachine / Character / Mesh / FocusComp / DataTable / CurrentRecord
+           └── UAttachmentRotationComponent   (회전·회전 저장)
 ```
 
 ## 세부 기능 ##
