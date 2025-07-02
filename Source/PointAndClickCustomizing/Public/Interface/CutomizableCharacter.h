@@ -22,9 +22,5 @@ class POINTANDCLICKCUSTOMIZING_API ICutomizableCharacter
 	GENERATED_BODY()
 
 public:
-	/**
-	 * Called to load or reset all saved attachments on this character.
-	 * @param CallerID  Identifier of the player requesting setup (optional).
-	 */
 	virtual void SetupPartsForCharacter(FName CallerID = NAME_None) = 0;
 };

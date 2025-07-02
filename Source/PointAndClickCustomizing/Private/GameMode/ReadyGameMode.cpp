@@ -13,7 +13,6 @@ void AReadyGameMode::OnPlayerReady(FName PlayerID)
 {
 	UE_LOG(LogTemp, Log, TEXT("[ReadyGameMode] OnPlayerReady called. PlayerID=%s"), *PlayerID.ToString());
 
-	// 중복 방지 및 추가
 	ReadyPlayers.Add(PlayerID);
 	UE_LOG(LogTemp, Log, TEXT("[ReadyGameMode] Added Player. Current ready count: %d"), ReadyPlayers.Num());
 

@@ -5,23 +5,106 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interface/CutomizableCharacter.h"
+#include "InputAction.h"
+#include "Interface/DamagableIneterface.h"
 #include "BattleCharacter.generated.h"
 
+class UCameraComponent;
+class USpringArmComponent;
+class UInputMappingContext;
+class UInputAction;
+class UBattleControlData;
 class UAttachmentLoaderComponent;
+class AProjectileActor;
+class AShootableActor;
+class AAttachableActor;
 
 UCLASS()
-class POINTANDCLICKCUSTOMIZING_API ABattleCharacter : public ACharacter, public ICutomizableCharacter
+class POINTANDCLICKCUSTOMIZING_API ABattleCharacter : public ACharacter, public ICutomizableCharacter, public IDamagableIneterface
 {
 	GENERATED_BODY()
 
 public:
 	ABattleCharacter();
-
-	/** Load saved attachments for this character on the server. */
 	virtual void SetupPartsForCharacter(FName CallerID = NAME_None) override;
 
 protected:
-	/** Component responsible for spawning/loading attachments. */
+	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	const TArray<TWeakObjectPtr<AAttachableActor>>& GetSpawnedAttachments() const;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	TObjectPtr<USpringArmComponent> CameraBoom;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	TObjectPtr<UCameraComponent> FollowCamera;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Input)
+	TObjectPtr<UInputAction> MoveAction;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Input)
+	TObjectPtr<UInputAction> AttackAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Input)
+	TObjectPtr<UInputMappingContext> CharacterInputMappingContext;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = CharacterControl)
+	TObjectPtr<UBattleControlData> QuaterControlData;
+
+private:
+	void HandleMove(const FInputActionValue& Value);
+	void HandleAttack();
+	
+	virtual void ApplyDamage_Implementation(float DamageAmount, AController* EventInstigator, AActor* DamageCauser) override;
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_OnDeath();
+
+	void Respawn();
+
+	FTimerHandle RespawnTimer;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float RespawnTime = 10.0f;
+	
+	UPROPERTY(Replicated)
+	bool bIsInputEnabled;
+	
+	void SetCharacterControl(const UBattleControlData* ControlData);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_PerformAttack(FVector_NetQuantize TargetLocation);
+	
+	void SpawnProjectile(const FVector& TargetLocation);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayAttackFX(FVector_NetQuantize MuzzleLocation, FVector_NetQuantize TargetLocation);
+
+
 	UPROPERTY(VisibleAnywhere, Category="CustomizingPlugin|Attachment")
-	UAttachmentLoaderComponent* AttachmentLoader;
+	TObjectPtr<UAttachmentLoaderComponent> AttachmentLoader;
+	
+	UPROPERTY()
+	TObjectPtr<AShootableActor> CachedShooter;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attack")
+	TSubclassOf<AProjectileActor> ProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attack")
+	float ProjectileSpawnZOffset = 50.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attack", Replicated)
+	float AttackCooldown = 1.0f;
+	
+	UPROPERTY(ReplicatedUsing = OnRep_CanAttack)
+	bool bCanAttack = true;
+	
+	UFUNCTION()
+	void OnRep_CanAttack();
+
+	FTimerHandle AttackCooldownTimer;
+	void ResetAttackCooldown();
 };

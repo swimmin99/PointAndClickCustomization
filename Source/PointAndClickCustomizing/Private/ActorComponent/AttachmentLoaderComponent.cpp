@@ -78,6 +78,8 @@ void UAttachmentLoaderComponent::DebugLogStoredAttachments(USkeletalMeshComponen
 
 void UAttachmentLoaderComponent::LoadExistingAttachments(USkeletalMeshComponent* Skel)
 {
+    ClearAllAttachments();
+
     FName PlayerID;
     if (!TryGetPlayerID(Skel, PlayerID))
         return;
@@ -90,7 +92,7 @@ void UAttachmentLoaderComponent::LoadExistingAttachments(USkeletalMeshComponent*
 
     const auto& Recs = UAttachmentDataStore::Get()->GetAttachments(PlayerID);
     UE_LOG(LogCustomizingPlugin, Log,
-        TEXT("%s::LoadExistingAttachments - %d records for %s"),
+        TEXT("%s::LoadExistingAttachments - Loading %d records for %s"),
         *GetName(), Recs.Num(), *PlayerID.ToString());
 
     for (const FAttachmentRecord& R : Recs)
@@ -103,6 +105,8 @@ void UAttachmentLoaderComponent::LoadExistingAttachments(USkeletalMeshComponent*
 
 void UAttachmentLoaderComponent::LoadExistingAttachmentsForClients(USkeletalMeshComponent* Skel, const TMap<FName, TArray<FAttachmentRecord>>& TargetDataMap)
 {
+    ClearAllAttachments();
+
     FName PlayerID;
     if (!TryGetPlayerID(Skel, PlayerID))
         return;
@@ -116,7 +120,7 @@ void UAttachmentLoaderComponent::LoadExistingAttachmentsForClients(USkeletalMesh
     if (const TArray<FAttachmentRecord>* Recs = TargetDataMap.Find(PlayerID))
     {
         UE_LOG(LogCustomizingPlugin, Log,
-            TEXT("%s::LoadExistingAttachmentsForClients - %d records for %s"),
+            TEXT("%s::LoadExistingAttachmentsForClients - Loading %d records for %s"),
             *GetName(), Recs->Num(), *PlayerID.ToString());
 
         for (const FAttachmentRecord& R : *Recs)
@@ -130,15 +134,37 @@ void UAttachmentLoaderComponent::LoadExistingAttachmentsForClients(USkeletalMesh
             TEXT("%s::LoadExistingAttachmentsForClients - No records for %s"),
             *GetName(), *PlayerID.ToString());
     }
-    
 }
 
 void UAttachmentLoaderComponent::SpawnAttachmentFromRecord(const FAttachmentRecord& Record, USkeletalMeshComponent* Skel)
 {
-    if (!AAttachableActor::SpawnAttachment(Record, Skel, ActorDataTable, this))
+    AAttachableActor* SpawnedActor = AAttachableActor::SpawnAttachment(Record, Skel, ActorDataTable, this);
+
+    if (SpawnedActor)
+    {
+        AttachedActors.Add(SpawnedActor);
+    }
+    else
     {
         UE_LOG(LogCustomizingPlugin, Warning,
             TEXT("%s::SpawnAttachmentFromRecord - Failed to spawn ActorID=%s"),
             *GetName(), *Record.ActorID.ToString());
     }
+}
+
+const TArray<TWeakObjectPtr<AAttachableActor>>& UAttachmentLoaderComponent::GetAttachedActors() const
+{
+    return AttachedActors;
+}
+
+void UAttachmentLoaderComponent::ClearAllAttachments()
+{
+    for (TWeakObjectPtr<AAttachableActor> WeakActor : AttachedActors)
+    {
+        if (WeakActor.IsValid())
+        {
+            WeakActor->Destroy();
+        }
+    }
+    AttachedActors.Empty();
 }

@@ -20,40 +20,38 @@ class POINTANDCLICKCUSTOMIZING_API AAttachableActor : public AActor
 public:
     AAttachableActor();
 	virtual void BeginPlay() override;
-    /** Identifier matching a row in the DataTable. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CustomizingPlugin|Attachable")
     FName ActorID;
 
-    /** Bone/socket name used for attachment. */
+	void DisableCollision();
+
+	
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CustomizingPlugin|Attachable")
     FName BoneName;
 
-    /**
-     * Spawn an attachable actor, attach it to Skel at the recorded bone,
-     * and restore its relative rotation.
-     * @param TemplateActorInfo            Saved attachment data.
-     * @param Skel              Target skeletal mesh component.
-     * @param ActorDataTable    DataTable mapping ActorID to Blueprint class.
-     * @param WorldContext      Context for getting UWorld.
-     * @return The spawned AAttachableActor, or nullptr on failure.
-     */
+
     static AAttachableActor* SpawnAttachment(
         const FAttachmentRecord& TemplateActorInfo,
         USkeletalMeshComponent* Skel,
         UDataTable* ActorDataTable,
         UObject* WorldContext
     );
-
-    /**
-     * Spawn a preview actor (without auto-attachment or collision).
-     * @param InActorID         Identifier for preview.
-     * @param ActorDataTable    DataTable mapping ActorID to Blueprint class.
-     * @param WorldContext      Context for getting UWorld.
-     * @return The spawned preview actor, or nullptr on failure.
-     */
+	
     static AAttachableActor* SpawnPreview(
         FName InActorID,
         UDataTable* ActorDataTable,
         UObject* WorldContext
     );
+	
+protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	UPROPERTY(ReplicatedUsing = OnRep_CollisionDisabled)
+	bool bIsCollisionDisabled;
+
+	UFUNCTION()
+	void OnRep_CollisionDisabled();
+
+	FVector InitialLocation;
+
 };

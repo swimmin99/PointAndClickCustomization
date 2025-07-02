@@ -8,6 +8,8 @@
 #include "Engine/DataTable.h"
 #include "AttachmentLoaderComponent.generated.h"
 
+class AAttachableActor; // Forward declaration
+
 /**
  * Component responsible for loading saved attachments onto a skeletal mesh.
  */
@@ -24,6 +26,12 @@ public:
 
 	void LoadExistingAttachmentsForClients(USkeletalMeshComponent* Skel, const TMap<FName, TArray<FAttachmentRecord>>& TargetDataMap);
 	
+	const TArray<TWeakObjectPtr<AAttachableActor>>& GetAttachedActors() const;
+
+
+	UFUNCTION(BlueprintCallable, Category="Attachment")
+	void ClearAllAttachments();
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	UDataTable* ActorDataTable;
 	
@@ -31,5 +39,6 @@ private:
 	bool TryGetPlayerID(USkeletalMeshComponent* Skel, FName& OutPlayerID) const;
 	void SpawnAttachmentFromRecord(const FAttachmentRecord& Record, USkeletalMeshComponent* Skel);
 
-	
+	UPROPERTY(Transient)
+	TArray<TWeakObjectPtr<AAttachableActor>> AttachedActors;
 };

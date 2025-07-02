@@ -4,18 +4,21 @@
 #include "Data/FActorDataRow.h"
 #include "Engine/World.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Net/UnrealNetwork.h"
 #if WITH_EDITOR
 #include "DrawDebugHelpers.h"
 #endif
 
 AAttachableActor::AAttachableActor()
 {
+    bIsCollisionDisabled = false; 
 }
 
 void AAttachableActor::BeginPlay()
 {
     Super::BeginPlay();
     SetReplicates(true);
+    InitialLocation = GetActorLocation();
 }
 
 AAttachableActor* AAttachableActor::SpawnAttachment(
@@ -157,4 +160,29 @@ AAttachableActor* AAttachableActor::SpawnPreview(
         TEXT("SpawnPreview - Spawned preview ActorID=%s"), *Att->ActorID.ToString());
 
     return Att;
+}
+
+
+void AAttachableActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AAttachableActor, bIsCollisionDisabled);
+}
+
+void AAttachableActor::DisableCollision()
+{
+    if (HasAuthority())
+    {
+        bIsCollisionDisabled = true;
+        OnRep_CollisionDisabled();
+    }
+}
+
+void AAttachableActor::OnRep_CollisionDisabled()
+{
+    if (bIsCollisionDisabled)
+    {
+        SetActorEnableCollision(false);
+        UE_LOG(LogTemp, Log, TEXT("[Client] Disabled collision for %s"), *GetName());
+    }
 }

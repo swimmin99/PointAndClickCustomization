@@ -56,7 +56,6 @@ protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override
     {
         Super::GetLifetimeReplicatedProps(Out);
-        // No additional replicated props.
     }
 
     /** Enhanced Input mapping context. */
