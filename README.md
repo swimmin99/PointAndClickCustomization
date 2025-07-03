@@ -13,6 +13,8 @@ PointAndClickCustomizing 플러그인은 액터 부착 및 상태 머신을 활�
 - 관련 UI가 슬레이트 기반으로 변경되었습니다.
 - attach/remove 로직이 서버에서 먼저 처리 된 후 클라이언트에 적용됩니다.
 - rotation 로직이 서버에서 거부시 client에서 초기 rotation으로 롤백됩니다.
+- 배틀 레벨에서, Top View로 투사체를 발사하는 로직을 테스트 할 수 있습니다. (Spherer 액터 부착 시 테스팅 가능)
+- 배틀 레벨에서, 클라이언트 측 예측 (프록시 투사체를 클라이언트 단에 생성하여 즉각 발사를 보여주는 로직)이 추가되었습니다.
 
 ## 주요 기능 (Features)
 - **준비(Ready) 버튼:** 커스터마이징 완료 시 누르는 버튼으로, 플레이어의 준비 완료를 서버에 알립니다.  
@@ -53,7 +55,11 @@ UCustomizingActorComponent  ←── Gateway API ──→  PlayerController
   - `LoadExistingAttachments(PlayerID)`  
   - 모든 부착 기록을 서버-클라이언트 동기화  
 - **Ready Button**  
-  - `PressReadyButton()` → `Server_SendReady` RPC → `ReadyGameMode` 전환  
+  - `PressReadyButton()` → `Server_SendReady` RPC → `ReadyGameMode` 전환
+ 
+- **ProjectileActor**
+  - 상속 시, 왼쪽 클릭을 통해 PC에서 투사체 (투사체 클래스 BP에 지정된 Mock Actor Mesh)를 발사하는 기능이 추가된 투사체 액터입니다.
+  - 기존 UE의 Projectile 클래스의 레이턴시 지터링 문제를 해결합니다.
 
 ---
 
