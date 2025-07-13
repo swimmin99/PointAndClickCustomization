@@ -23,5 +23,12 @@ protected:
 
 public:
 	// Public getter for the projectile mesh.
-	UStaticMesh* GetProjectileMesh() const { return ProjectileMesh; }
+	UStaticMesh* GetProjectileMesh() const { return ProjectileMesh.Get(); }
+
+    UPROPERTY(VisibleAnywhere, Category = "Weapon")
+    int32 CurrentAmmo;
+
+    UPROPERTY(VisibleAnywhere, Category = "Weapon")
+    int32 MaxAmmo;
+
 };

@@ -1,5 +1,6 @@
 // Copyright 2025 Devhanghae All Rights Reserved.
 #include "Data/AttachmentDataStore.h"
+#include "UObject/Package.h"
 #include "PointAndClickCustomizing.h"
 
 UAttachmentDataStore* UAttachmentDataStore::Get()
@@ -7,14 +8,13 @@ UAttachmentDataStore* UAttachmentDataStore::Get()
     static UAttachmentDataStore* Inst = nullptr;
     if (!Inst)
     {
-        Inst = NewObject<UAttachmentDataStore>(
-            GetTransientPackage(),
-            UAttachmentDataStore::StaticClass());
+        Inst = NewObject<UAttachmentDataStore>(static_cast<UObject*>(GetTransientPackage()));
         Inst->AddToRoot();
         UE_LOG(LogCustomizingPlugin, Log, TEXT("AttachmentDataStore::Get - Created singleton instance"));
     }
     return Inst;
 }
+
 
 bool UAttachmentDataStore::AddAttachment(FName PlayerID, const FAttachmentRecord& Rec)
 {

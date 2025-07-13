@@ -27,10 +27,11 @@ public:
 	USphereComponent* GetCollisionComponent() const { return CollisionComponent; }
 	void SetProjectileMesh(UStaticMesh* NewMesh);
 	void SetDamage(float NewDamage);
-
+	void multiplyDamage(float Multiplier);
 protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USphereComponent> CollisionComponent;
@@ -41,11 +42,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovementComponent;
 
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
 	UPROPERTY(ReplicatedUsing = OnRep_ProjectileMesh)
 	TObjectPtr<UStaticMesh> ProjectileMeshToUse;
+
+	
+
+	UFUNCTION()
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	
 	UFUNCTION()
 	void OnRep_ProjectileMesh();

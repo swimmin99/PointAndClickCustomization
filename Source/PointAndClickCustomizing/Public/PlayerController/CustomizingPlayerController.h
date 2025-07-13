@@ -6,7 +6,6 @@
 #include "PointAndClickCustomizing.h"           // for LogCustomizingPlugin
 #include "BasePlayerController.h"
 #include "InputActionValue.h"
-#include "Data/FAttachmentRecord.h"
 #include "UI/CustomizingMainHUD.h" 
 #include "CustomizingPlayerController.generated.h"
 
@@ -32,6 +31,7 @@ public:
     virtual void SetupInputComponent() override;
 
     
+    
     /** Manages preview, focus, attach logic. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CustomizingPlugin")
     UCustomizingGatewayComponent* CustomizingComp;
@@ -39,14 +39,8 @@ public:
     /** Spawn a preview actor for the given ID. */
     UFUNCTION(BlueprintCallable, Category="CustomizingPlugin")
     void TrySpawningAttachableActor(FName ID);
-
-    /** Press Ready button to notify server. */
-    UFUNCTION(BlueprintCallable, Category="CustomizingPlugin")
     void PressReadyButton();
 
-    /** Send ready-state RPC. */
-    UFUNCTION(Server, Reliable, Category="CustomizingPlugin")
-    void Server_SendReady(FName PlayerID);
 
     /** Maini HUD Class  */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
@@ -112,5 +106,4 @@ private:
     void Input_LeftClickEnded(const FInputActionValue& Value);
     void Input_Delete(const FInputActionValue& Value);
     void Input_Back(const FInputActionValue& Value);
-    void Input_GoToBattle(const FInputActionValue& Value);
 };

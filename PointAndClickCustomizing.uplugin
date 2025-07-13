@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.1",
+	"VersionName": "1.2",
 	"FriendlyName": "PointAndClickCustomizing",
 	"Description": "This plugin is an Unreal Engine extension that provides point-and-click character customization using attachable actors and a state machine. ",
 	"Category": "Customizing",

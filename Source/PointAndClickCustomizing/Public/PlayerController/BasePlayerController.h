@@ -2,7 +2,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "PointAndClickCustomizing.h"    // for LogCustomizingPlugin
+#include "PointAndClickCustomizing.h"    
+#include "Data/FPopupData.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "BasePlayerController.generated.h"
@@ -27,8 +28,32 @@ public:
 	/** Invoke customizable interface to set up attachments. */
 	UFUNCTION(BlueprintCallable, Category="CustomizingPlugin")
 	virtual void SetupAppearance();
-
-	/** Travel locally or on server depending on authority. */
-	UFUNCTION(BlueprintCallable, Category="CustomizingPlugin")
 	void TravelToLevel(const FString& LevelName);
+
+	UFUNCTION(BlueprintCallable, Category="CustomizingPlugin")
+	void OnPressReadyButton();
+
+	UFUNCTION(Client, Reliable)
+	void Client_ShowWaitingPopup();
+
+	UFUNCTION(Client, Reliable)
+	void Client_ClosePopup();
+
+	UFUNCTION(Client, Reliable)
+	void Client_ShowReadyConfirmationFailed();
+
+	void RequestPopup(const FText& Title, const FText& Description, EPopupButtonType ButtonType, FPopupDelegate OnConfirmed = FPopupDelegate(), FPopupDelegate OnCancelled = FPopupDelegate());
+
+protected:
+	UFUNCTION(Server, Reliable)
+	void Server_RequestReady(FName PlayerID);
+
+	UFUNCTION(Server, Reliable)
+	void Server_RequestCancelReady(FName PlayerID);
+
+	void ShowReadyConfirmationPopup();
+	
+	UFUNCTION()
+	void OnCancelWaiting();
+
 };

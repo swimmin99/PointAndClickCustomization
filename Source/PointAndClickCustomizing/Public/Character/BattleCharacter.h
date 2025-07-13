@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Interface/CutomizableCharacter.h"
 #include "InputAction.h"
+#include "Actor/ShootableActor.h"
 #include "Interface/DamagableIneterface.h"
 #include "BattleCharacter.generated.h"
 
@@ -18,6 +19,7 @@ class UAttachmentLoaderComponent;
 class AProjectileActor;
 class AShootableActor;
 class AAttachableActor;
+class UWeaponMapComponent;
 
 UCLASS()
 class POINTANDCLICKCUSTOMIZING_API ABattleCharacter : public ACharacter, public ICutomizableCharacter, public IDamagableIneterface
@@ -27,7 +29,8 @@ class POINTANDCLICKCUSTOMIZING_API ABattleCharacter : public ACharacter, public 
 public:
 	ABattleCharacter();
 	virtual void SetupPartsForCharacter(FName CallerID = NAME_None) override;
-
+	UWeaponMapComponent* GetWeaponMapComponent() const { return WeaponMapComponent; }
+	
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
@@ -49,6 +52,9 @@ protected:
 	TObjectPtr<UInputAction> AttackAction;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Input)
+	TObjectPtr<UInputAction> WheelAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Input)
 	TObjectPtr<UInputMappingContext> CharacterInputMappingContext;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = CharacterControl)
@@ -56,6 +62,7 @@ protected:
 
 private:
 	void HandleMove(const FInputActionValue& Value);
+	void HandleChangeWeapon(const FInputActionValue& Value);
 	void HandleAttack();
 	
 	virtual void ApplyDamage_Implementation(float DamageAmount, AController* EventInstigator, AActor* DamageCauser) override;
@@ -81,14 +88,15 @@ private:
 	void SpawnProjectile(const FVector& TargetLocation);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_PlayAttackFX(FVector_NetQuantize MuzzleLocation, FVector_NetQuantize TargetLocation);
+	void Multicast_PlayAttackFX(FVector_NetQuantize TargetLocation);
 
 
 	UPROPERTY(VisibleAnywhere, Category="CustomizingPlugin|Attachment")
 	TObjectPtr<UAttachmentLoaderComponent> AttachmentLoader;
-	
-	UPROPERTY()
-	TObjectPtr<AShootableActor> CachedShooter;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWeaponMapComponent> WeaponMapComponent;
+
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attack")
 	TSubclassOf<AProjectileActor> ProjectileClass;
@@ -106,5 +114,6 @@ private:
 	void OnRep_CanAttack();
 
 	FTimerHandle AttackCooldownTimer;
+	void ShootProjectile(FVector_NetQuantize TargetLocation, TObjectPtr <AShootableActor> Projectile, bool isAuthority, TFunction<void(AProjectileActor*)> Callback);
 	void ResetAttackCooldown();
 };

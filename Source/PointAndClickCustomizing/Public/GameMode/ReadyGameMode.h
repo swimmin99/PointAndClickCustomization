@@ -7,6 +7,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "ReadyGameMode.generated.h"
 
+class ABasePlayerController;
 /**
  * 
  */
@@ -18,9 +19,15 @@ public:
 	AReadyGameMode();
 	UPROPERTY(EditAnywhere, Category="Ready")
 	FString TravelURL = TEXT("/PointAndClickCustomizing/Level/BattleArea?listen");
-	void OnPlayerReady(FName PlayerID);
+	void HandlePlayerReadyRequest(ABasePlayerController* PlayerController, FName PlayerID);
+	void HandlePlayerCancelRequest(ABasePlayerController* PlayerController, FName PlayerID);
+
+	
 protected:
+	void CheckAllPlayersReadyAndTravel();
+	bool bIsTraveling = false;
 	void TryTravel();
+	
 virtual void BeginPlay() override;
 	UPROPERTY()
 	TSet<FName> ReadyPlayers;

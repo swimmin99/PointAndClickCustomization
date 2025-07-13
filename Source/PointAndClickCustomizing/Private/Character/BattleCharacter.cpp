@@ -15,12 +15,15 @@
 #include "Actor/ShootableActor.h"
 #include "Data/BattleControlData.h"
 #include "ActorComponent/AttachmentLoaderComponent.h"
+#include "ActorComponent/WeaponMapComponent.h"
 #include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h"
 
 
 ABattleCharacter::ABattleCharacter()
 {
+	WeaponMapComponent = CreateDefaultSubobject<UWeaponMapComponent>(TEXT("WeaponMapComponent"));
+
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
@@ -69,7 +72,7 @@ void ABattleCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 	EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABattleCharacter::HandleMove);
 	EIC->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ABattleCharacter::HandleAttack);
-
+	EIC->BindAction(WheelAction, ETriggerEvent::Triggered, this, &ABattleCharacter::HandleChangeWeapon);
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC)
 	{
@@ -116,6 +119,28 @@ void ABattleCharacter::SetCharacterControl(const UBattleControlData* ControlData
 	CameraBoom->bDoCollisionTest = ControlData->bDoCollisionTest;
 }
 
+void ABattleCharacter::SetupPartsForCharacter(FName CallerID)
+{
+	if (!HasAuthority() || !AttachmentLoader) return;
+
+	if (USkeletalMeshComponent* TargetMesh = GetMesh())
+	{
+		AttachmentLoader->LoadExistingAttachments(TargetMesh);
+
+		for (const auto& WeakAttachment : GetSpawnedAttachments())
+		{
+			if (WeakAttachment.IsValid())
+			{
+				WeakAttachment->DisableCollision();
+				if (AShootableActor* Shooter = Cast<AShootableActor>(WeakAttachment.Get()))
+				{
+					WeaponMapComponent->AddWeapon(Shooter);
+				}
+			}
+		}
+	}
+}
+
 void ABattleCharacter::HandleMove(const FInputActionValue& Value)
 {
 	if (!bIsInputEnabled || !bCanAttack) return;
@@ -130,8 +155,27 @@ void ABattleCharacter::HandleMove(const FInputActionValue& Value)
 	AddMovementInput(MoveDirection, 1.0f);
 }
 
+void ABattleCharacter::HandleChangeWeapon(const FInputActionValue& Value)
+{
+	if (!WeaponMapComponent) return;
+
+	const float WheelDirection = Value.Get<float>();
+	if (WheelDirection > 0.f)
+	{
+		WeaponMapComponent->Server_FocusNextWeapon();
+		UE_LOG(LogTemp, Log, TEXT("Requested Server_FocusNextWeapon"));
+	}
+	else if (WheelDirection < 0.f)
+	{
+		WeaponMapComponent->Server_FocusPreviousWeapon();
+		UE_LOG(LogTemp, Log, TEXT("Requested Server_FocusPreviousWeapon"));
+	}
+}
+
 void ABattleCharacter::HandleAttack()
 {
+	UE_LOG(LogTemp, Log, TEXT("ABattleCharacter::HandleAttack: Fire Weapon Pressed."));
+
 	if (bCanAttack && bIsInputEnabled)
 	{
 		if (APlayerController* PC = Cast<APlayerController>(GetController()))
@@ -139,7 +183,7 @@ void ABattleCharacter::HandleAttack()
 			FHitResult HitResult;
 			if (PC->GetHitResultUnderCursor(ECC_Visibility, false, HitResult))
 			{
-				// 서버에 공격 명령 RPC 전송
+				UE_LOG(LogTemp, Log, TEXT("ABattleCharacter::HandleAttack: Fire Weapon Called."));
 				Server_PerformAttack(HitResult.Location);
 			}
 		}
@@ -176,8 +220,26 @@ void ABattleCharacter::Respawn()
 
 void ABattleCharacter::Server_PerformAttack_Implementation(FVector_NetQuantize TargetLocation)
 {
-	if (!bCanAttack || !CachedShooter || !ProjectileClass)
+    if (!bCanAttack || !WeaponMapComponent || !WeaponMapComponent->IsValid() || !ProjectileClass)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ABattleCharacter::Server_PerformAttack: Attack check failed. Dumping state:"));
+		if (!bCanAttack)
+		{
+			UE_LOG(LogTemp, Warning, TEXT(" - Reason: bCanAttack is false."));
+		}
+		if (!WeaponMapComponent)
+		{
+			UE_LOG(LogTemp, Warning, TEXT(" - Reason: MyWeaponMap object itself is a nullptr."));
+		}
+		else if (!WeaponMapComponent->IsValid()) 
+		{
+			UE_LOG(LogTemp, Warning, TEXT(" - Reason: MyWeaponMap->IsValid() returned false."));
+		}
+		if (!ProjectileClass)
+		{
+			UE_LOG(LogTemp, Warning, TEXT(" - Reason: ProjectileClass is a nullptr."));
+		}
+		
 		return;
 	}
 	
@@ -187,10 +249,8 @@ void ABattleCharacter::Server_PerformAttack_Implementation(FVector_NetQuantize T
 
 	const FVector LookDirection = (TargetLocation - GetActorLocation()).GetSafeNormal2D();
 	SetActorRotation(LookDirection.Rotation());
-
-	const FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 50.0f + FVector(0, 0, ProjectileSpawnZOffset);
-
-	Multicast_PlayAttackFX(SpawnLocation, TargetLocation);
+	
+	Multicast_PlayAttackFX(TargetLocation);
 
 	SpawnProjectile(TargetLocation);
 }
@@ -198,57 +258,70 @@ void ABattleCharacter::Server_PerformAttack_Implementation(FVector_NetQuantize T
 void ABattleCharacter::SpawnProjectile(const FVector& TargetLocation)
 {
 	if (!HasAuthority()) return;
-
-	UStaticMesh* MeshToUse = CachedShooter->GetProjectileMesh();
-	if (!MeshToUse) 
+	float_t multiplier = 1;
+	if (ProjectileClass && WeaponMapComponent->IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("SpawnProjectile failed: MeshToUse is nullptr."));
-		return;
-	}
-
-	const FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 50.0f + FVector(0, 0, ProjectileSpawnZOffset);
-	const FRotator SpawnRotation = GetActorRotation();
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this; 
-	SpawnParams.Instigator = this;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-	if (AProjectileActor* SpawnedProjectile = GetWorld()->SpawnActor<AProjectileActor>(ProjectileClass, SpawnLocation, SpawnRotation, SpawnParams))
-	{
-		SpawnedProjectile->SetProjectileMesh(MeshToUse);
+		for(const auto & Shooter : WeaponMapComponent->GetCurrentWeapons())
+		{
+			ShootProjectile(TargetLocation, Shooter, true, [=](AProjectileActor* SpawnedProjectile)
+			{
+				SpawnedProjectile->multiplyDamage(multiplier);
+			});
+		}
 	}
 }
 
-void ABattleCharacter::Multicast_PlayAttackFX_Implementation(FVector_NetQuantize MuzzleLocation, FVector_NetQuantize TargetLocation)
+
+
+void ABattleCharacter::Multicast_PlayAttackFX_Implementation(FVector_NetQuantize TargetLocation)
 {
-	if (IsLocallyControlled() && !HasAuthority()) // 로컬 플레이어이며, 서버가 아닐 때
+	if (IsLocallyControlled() && !HasAuthority())
 	{
-		if (ProjectileClass && CachedShooter)
+		if (ProjectileClass && WeaponMapComponent->IsValid())
 		{
-			UStaticMesh* MeshToUse = CachedShooter->GetProjectileMesh();
-			if (!MeshToUse) return;
-
-			const FRotator SpawnRotation = (TargetLocation - MuzzleLocation).Rotation();
-			
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = GetController();
-			SpawnParams.Instigator = this;
-			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-			AProjectileActor* CosmeticProjectile = GetWorld()->SpawnActor<AProjectileActor>(ProjectileClass, MuzzleLocation, SpawnRotation, SpawnParams);
-			if (CosmeticProjectile)
+			for(const auto & Shooter : WeaponMapComponent->GetCurrentWeapons())
 			{
-				CosmeticProjectile->SetRole(ROLE_None); 
-				CosmeticProjectile->SetReplicates(false);
-				CosmeticProjectile->SetProjectileMesh(MeshToUse);
-				if (CosmeticProjectile->GetCollisionComponent())
+				if (Shooter)
 				{
-					CosmeticProjectile->GetCollisionComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					Shooter->SetRole(ROLE_None); 
+					Shooter->SetReplicates(false);
+
+					ShootProjectile(TargetLocation, Shooter, false, [](AProjectileActor* SpawnedProjectile)
+					{
+						if (SpawnedProjectile->GetCollisionComponent())
+						{
+							SpawnedProjectile->GetCollisionComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+						}
+					});
 				}
 			}
 		}
 	}
+}
+
+void ABattleCharacter::ShootProjectile(FVector_NetQuantize TargetLocation, TObjectPtr <AShootableActor> Projectile, bool isAuthority, TFunction<void(AProjectileActor*)> Callback)
+{
+	UStaticMesh* MeshToUse = Projectile->GetProjectileMesh();
+	if (!MeshToUse) return;
+
+	const FRotator SpawnRotation = (TargetLocation - Projectile->GetActorLocation()).Rotation();
+			
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = this;
+	if (isAuthority)
+	{
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	} else
+	{
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	}
+	FTransform SpawnTransform(SpawnRotation, Projectile->GetActorLocation(), FVector(0.1f, 0.1f, 0.1f));
+	AProjectileActor* ProjectileActor = GetWorld()->SpawnActor<AProjectileActor>(ProjectileClass, SpawnTransform, SpawnParams);
+	ProjectileActor->SetProjectileMesh(MeshToUse);
+
+	if (Callback)
+		Callback(ProjectileActor);
 }
 
 void ABattleCharacter::ResetAttackCooldown()
@@ -259,31 +332,6 @@ void ABattleCharacter::ResetAttackCooldown()
 
 void ABattleCharacter::OnRep_CanAttack()
 {
-}
-
-
-void ABattleCharacter::SetupPartsForCharacter(FName CallerID)
-{
-	if (!HasAuthority() || !AttachmentLoader) return;
-
-	if (USkeletalMeshComponent* TargetMesh = GetMesh())
-	{
-		AttachmentLoader->LoadExistingAttachments(TargetMesh);
-
-		for (const auto& WeakAttachment : GetSpawnedAttachments())
-		{
-			if (WeakAttachment.IsValid())
-			{
-				WeakAttachment->DisableCollision();
-				if (AShootableActor* Shooter = Cast<AShootableActor>(WeakAttachment.Get()))
-				{
-					CachedShooter = Shooter;
-					UE_LOG(LogTemp, Log, TEXT("%s: Found and cached ShootableActor: %s"), *GetName(), *Shooter->GetName());
-					break; 
-				}
-			}
-		}
-	}
 }
 
 const TArray<TWeakObjectPtr<AAttachableActor>>& ABattleCharacter::GetSpawnedAttachments() const

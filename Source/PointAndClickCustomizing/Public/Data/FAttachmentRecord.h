@@ -24,5 +24,5 @@ struct POINTANDCLICKCUSTOMIZING_API FAttachmentRecord
 
 	/** Local rotation applied after attachment. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CustomizingPlugin|Attachment")
-	FRotator ActorRotation;
+	FRotator ActorRotation = FRotator::ZeroRotator;
 };

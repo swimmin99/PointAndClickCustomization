@@ -11,16 +11,24 @@
 AProjectileActor::AProjectileActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	
 	bReplicates = true;
 	SetReplicatingMovement(true);
+	
 	bNetUseOwnerRelevancy = true;
 	bOnlyRelevantToOwner = false;
 	
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
 	RootComponent = CollisionComponent;
 	CollisionComponent->SetCollisionProfileName(TEXT("BlockAllDynamic"));
-	CollisionComponent->SetSphereRadius(15.0f);
+	CollisionComponent->SetSphereRadius(5.0f);
+
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CollisionComponent->SetCollisionObjectType(ECC_WorldDynamic);
+	CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+
 	
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	MeshComponent->SetupAttachment(RootComponent);
@@ -37,6 +45,7 @@ AProjectileActor::AProjectileActor()
 
 	if (HasAuthority())
 	{
+		CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AProjectileActor::OnOverlapBegin);
 		CollisionComponent->OnComponentHit.AddDynamic(this, &AProjectileActor::OnHit);
 	}
 }
@@ -44,11 +53,6 @@ AProjectileActor::AProjectileActor()
 void AProjectileActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	if (AActor* MyOwner = GetOwner())
-	{
-		CollisionComponent->IgnoreActorWhenMoving(MyOwner, true);
-	}
 	if (APawn* MyInstigator = GetInstigator())
 	{
 		CollisionComponent->IgnoreActorWhenMoving(MyInstigator, true);
@@ -61,6 +65,18 @@ void AProjectileActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(AProjectileActor, Damage);
 	DOREPLIFETIME(AProjectileActor, ProjectileMeshToUse);
+}
+
+bool AProjectileActor::IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const
+{
+	const AController* InstigatorController = GetInstigatorController();
+
+	if (InstigatorController == RealViewer)
+	{
+		return false;
+	}
+
+	return Super::IsNetRelevantFor(RealViewer, ViewTarget, SrcLocation);
 }
 
 void AProjectileActor::SetProjectileMesh(UStaticMesh* NewMesh)
@@ -95,7 +111,26 @@ void AProjectileActor::SetDamage(float NewDamage)
 	}
 }
 
+void AProjectileActor::multiplyDamage(float Multiplier)
+{
+	if (HasAuthority())
+	{
+		Damage = Damage*=Multiplier;
+	}
+}
+
 void AProjectileActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	Destroy();
+}
+
+
+void AProjectileActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!HasAuthority() || !OtherActor || OtherActor == this || OtherActor == GetInstigator())
 	{
@@ -105,7 +140,7 @@ void AProjectileActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherAct
 	if (OtherActor->GetClass()->ImplementsInterface(UDamagableIneterface::StaticClass()))
 	{
 		IDamagableIneterface::Execute_ApplyDamage(OtherActor, Damage, GetInstigatorController(), this);
+
+		Destroy();
 	}
-	
-	Destroy();
 }

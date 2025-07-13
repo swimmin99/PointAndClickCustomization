@@ -6,9 +6,6 @@
 #include "Widgets/SCompoundWidget.h"
 
 class SVerticalBox;
-/**
- * 
- */
 
 struct FDynamicItemInfo
 {

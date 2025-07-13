@@ -3,7 +3,6 @@
 
 #include "CoreMinimal.h"
 #include "Data/FAttachmentRecord.h"
-#include "UObject/NoExportTypes.h"
 #include "AttachmentDataStore.generated.h"
 
 /**

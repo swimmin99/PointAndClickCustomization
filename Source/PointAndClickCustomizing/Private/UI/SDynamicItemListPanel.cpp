@@ -1,17 +1,15 @@
 // Copyright 2025 Devhanghae All Rights Reserved.
+
 #include "UI/SDynamicItemListPanel.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SBackgroundBlur.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/Text/STextBlock.h"
-#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Engine/Engine.h"
-#include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
 #include "Widgets/SNullWidget.h"
 #include "Widgets/SOverlay.h"
-#include "UI/AttachmentButtonWidget.h"
 
 void SDynamicItemListPanel::Construct(const FArguments& InArgs)
 {

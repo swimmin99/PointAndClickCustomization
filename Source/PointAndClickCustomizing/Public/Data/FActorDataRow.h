@@ -2,6 +2,7 @@
 #pragma once
 #include "FCommonStat.h"
 #include "GameFramework/Actor.h"
+#include "Types/EActorType.h"
 #include "FActorDataRow.generated.h"
 
 enum class EActorType : uint8;
@@ -20,7 +21,7 @@ struct FActorDataRow : public FTableRowBase
 
 	/** Category/type of actor (Weapon, Armor, etc). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Data")
-	EActorType Type;
+	EActorType Type = EActorType::Weapon;
 
 	/** Blueprint class to spawn for this actor. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Data")
