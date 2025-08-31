@@ -95,6 +95,7 @@ void ABattleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ABattleCharacter, AttackCooldown);
 	DOREPLIFETIME(ABattleCharacter, bCanAttack);
 	DOREPLIFETIME(ABattleCharacter, bIsInputEnabled);
+	DOREPLIFETIME(ABattleCharacter, bIsDead);
 }
 
 void ABattleCharacter::SetCharacterControl(const UBattleControlData* ControlData)
@@ -117,6 +118,8 @@ void ABattleCharacter::SetCharacterControl(const UBattleControlData* ControlData
 	CameraBoom->bInheritYaw = ControlData->bInheritYaw;
 	CameraBoom->bInheritRoll = ControlData->bInheritRoll;
 	CameraBoom->bDoCollisionTest = ControlData->bDoCollisionTest;
+
+	GetCharacterMovement()->SetIsReplicated(false);
 }
 
 void ABattleCharacter::SetupPartsForCharacter(FName CallerID)
@@ -185,9 +188,38 @@ void ABattleCharacter::HandleAttack()
 			{
 				UE_LOG(LogTemp, Log, TEXT("ABattleCharacter::HandleAttack: Fire Weapon Called."));
 				Server_PerformAttack(HitResult.Location);
+				Solo_PlayAttackFX(HitResult.Location);
 			}
 		}
 	}
+}
+
+void ABattleCharacter::ApplyDamageForMock_Implementation(float DamageAmount, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (HasAuthority()) return;
+
+	// 이미 대기 중/확정 사망이면 중복 방지
+	if (!bIsInputEnabled || bIsDead) return;
+
+	SetActorHiddenInGame(true);
+	bIsInputEnabled = false;
+
+	GetWorldTimerManager().SetTimer(
+		DeathQueryTimer,
+		this,
+		&ABattleCharacter::RequestDeathValidation_Deferred,
+		1.0f,
+		false
+	);
+}
+
+void ABattleCharacter::RequestDeathValidation_Deferred()
+{
+	// 이미 확정 사망/부활 등 상태 변했으면 무시
+	if (bIsDead)
+		return;
+
+	Server_AskForDeathValidation();
 }
 
 void ABattleCharacter::ApplyDamage_Implementation(float DamageAmount, AController* EventInstigator, AActor* DamageCauser)
@@ -199,6 +231,7 @@ void ABattleCharacter::ApplyDamage_Implementation(float DamageAmount, AControlle
 
 	bIsInputEnabled = false;
 
+	bIsDead = true;
 	Multicast_OnDeath();
 
 	GetWorldTimerManager().SetTimer(RespawnTimer, this, &ABattleCharacter::Respawn, RespawnTime, false);
@@ -214,7 +247,7 @@ void ABattleCharacter::Respawn()
 {
 	SetActorEnableCollision(true);
 	SetActorHiddenInGame(false);
-	
+	bIsDead = false;
 	bIsInputEnabled = true;
 }
 
@@ -222,7 +255,6 @@ void ABattleCharacter::Server_PerformAttack_Implementation(FVector_NetQuantize T
 {
     if (!bCanAttack || !WeaponMapComponent || !WeaponMapComponent->IsValid() || !ProjectileClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABattleCharacter::Server_PerformAttack: Attack check failed. Dumping state:"));
 		if (!bCanAttack)
 		{
 			UE_LOG(LogTemp, Warning, TEXT(" - Reason: bCanAttack is false."));
@@ -250,10 +282,17 @@ void ABattleCharacter::Server_PerformAttack_Implementation(FVector_NetQuantize T
 	const FVector LookDirection = (TargetLocation - GetActorLocation()).GetSafeNormal2D();
 	SetActorRotation(LookDirection.Rotation());
 	
-	Multicast_PlayAttackFX(TargetLocation);
 
 	SpawnProjectile(TargetLocation);
 }
+
+
+void ABattleCharacter::Server_AskForDeathValidation_Implementation()
+{
+	if (!bIsDead)
+		Client_DeathRejected();
+}
+
 
 void ABattleCharacter::SpawnProjectile(const FVector& TargetLocation)
 {
@@ -273,7 +312,7 @@ void ABattleCharacter::SpawnProjectile(const FVector& TargetLocation)
 
 
 
-void ABattleCharacter::Multicast_PlayAttackFX_Implementation(FVector_NetQuantize TargetLocation)
+void ABattleCharacter::Solo_PlayAttackFX(FVector_NetQuantize TargetLocation)
 {
 	if (IsLocallyControlled() && !HasAuthority())
 	{
@@ -288,10 +327,12 @@ void ABattleCharacter::Multicast_PlayAttackFX_Implementation(FVector_NetQuantize
 
 					ShootProjectile(TargetLocation, Shooter, false, [](AProjectileActor* SpawnedProjectile)
 					{
+						
 						if (SpawnedProjectile->GetCollisionComponent())
 						{
 							SpawnedProjectile->GetCollisionComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 						}
+						
 					});
 				}
 			}

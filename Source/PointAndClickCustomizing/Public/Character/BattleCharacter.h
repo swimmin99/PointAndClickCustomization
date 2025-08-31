@@ -30,6 +30,10 @@ public:
 	ABattleCharacter();
 	virtual void SetupPartsForCharacter(FName CallerID = NAME_None) override;
 	UWeaponMapComponent* GetWeaponMapComponent() const { return WeaponMapComponent; }
+
+	UFUNCTION(Client, Reliable)
+	void Client_ApplyDamageForMock(float DamageAmount, AController* EventInstigator, AActor* DamageCauser);
+
 	
 protected:
 	virtual void BeginPlay() override;
@@ -59,17 +63,24 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = CharacterControl)
 	TObjectPtr<UBattleControlData> QuaterControlData;
+	FTimerHandle DeathQueryTimer;
 
 private:
 	void HandleMove(const FInputActionValue& Value);
 	void HandleChangeWeapon(const FInputActionValue& Value);
 	void HandleAttack();
-	
+
+	virtual void ApplyDamageForMock_Implementation(float DamageAmount, AController* EventInstigator, AActor* DamageCauser) override;
+	void RequestDeathValidation_Deferred();
 	virtual void ApplyDamage_Implementation(float DamageAmount, AController* EventInstigator, AActor* DamageCauser) override;
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_OnDeath();
 
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayAttackFX(FVector_NetQuantize TargetLocation);
+	
 	void Respawn();
 
 	FTimerHandle RespawnTimer;
@@ -84,11 +95,15 @@ private:
 	
 	UFUNCTION(Server, Reliable)
 	void Server_PerformAttack(FVector_NetQuantize TargetLocation);
+
+	UFUNCTION(Server, Reliable)
+	void Server_AskForDeathValidation();
+
+	UFUNCTION(Client, Reliable)
+	void Client_DeathRejected();
 	
 	void SpawnProjectile(const FVector& TargetLocation);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_PlayAttackFX(FVector_NetQuantize TargetLocation);
+	void Solo_PlayAttackFX(FVector_NetQuantize TargetLocation);
 
 
 	UPROPERTY(VisibleAnywhere, Category="CustomizingPlugin|Attachment")
@@ -109,6 +124,9 @@ private:
 	
 	UPROPERTY(ReplicatedUsing = OnRep_CanAttack)
 	bool bCanAttack = true;
+
+	UPROPERTY(Replicated)
+	bool bIsDead = false;
 	
 	UFUNCTION()
 	void OnRep_CanAttack();
