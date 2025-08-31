@@ -24,12 +24,6 @@ void UCustomizingGatewayComponent::TickComponent(float DeltaTime, ELevelTick Tic
     if (!GetOwner())
         return;
 
-    if (StateMachine->GetState() == ECustomizingState::Idle)
-    {
-        FocusComp->UpdateFocusDetection();
-        return;
-    }
-
     PreviewComp->Update(DeltaTime);
 }
 
@@ -68,6 +62,7 @@ AAttachableActor* UCustomizingGatewayComponent::GetFocusedActor()
 
 bool UCustomizingGatewayComponent::TryFocusAttachedActor()
 {
+    FocusComp->UpdateFocusDetection();
     return FocusComp->TryFocusAttachedActor();
 }
 
