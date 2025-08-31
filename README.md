@@ -5,39 +5,22 @@
 </p>
 
  ## 소개 (Introduction)
-PointAndClickCustomizing 플러그인은 액터 부착 및 상태 머신을 활용하여 포인트 앤 클릭 방식의 캐릭터 커스터마이징 기능을 제공하는 언리얼 엔진 플러그인입니다.  
-플레이어는 마우스로 아이템을 캐릭터에 부착하고 위치/회전을 조정한 뒤 준비(Ready) 버튼을 눌러 커스터마이징을 확정할 수 있습니다. 각 클라이언트의 준비가 완료되면 자동으로 다음 레벨로 이동됩니다.
-이 플러그인은 커스터마이징 기능을 전용 상태 머신 컴포넌트로 단계를 관리하며, 멀티플레이어 환경에서의 서버-클라이언트 동기화를 지원합니다. 리슨 서버를 지원하도록 제작되었습니다.
+ 1. 커스터마이징 기능 제공 : 마우스로 3D 파츠를 드래그 드롭으로 부착하고 회전하는 기능을 지원합니다.
+ 2. 기본 UI 제공 : 커스터마이징 파츠를 선택하고, 레벨을 전환할 수 있는 UI를 기본 제공합니다.
+ 3. 네트워크 동기화 제공 : 리슨 서버 환경에서 데이터를 서버 권위로 동기화하고, 투사체의 경우 클라이언트 측 예측을 하는 기능을 제공합니다.
+ 4. 로비 기능 제공 : 리슨 서버 참여자 중 로컬 사용자가 Ready 신호를 주고 이를 서버측에서 처리하여 레벨 전환하는 시스템을 제공합니다.
+ 5. 기본 전투 데모 제공 : 리슨 서버 환경에서 부착한 파츠가 Shootable 할 경우 투사체를 소환 발사하고 죽는 기본 사이클의 데모 레벨이 제공됩니다.
+
 
 - **버전 1.2 변경점 :**
 - 관련 UI가 슬레이트 기반으로 변경되었습니다.
 - attach/remove 로직이 서버에서 먼저 처리 된 후 클라이언트에 적용됩니다.
 - rotation 로직이 서버에서 거부시 client에서 초기 rotation으로 롤백됩니다.
+- 레벨 전환 시 Ready 여부가 PopUp UI 시스템에 의해서 제공됩니다.
 - 배틀 레벨에서, Top View로 투사체를 발사하는 로직을 테스트 할 수 있습니다. (Spherer 액터 부착 시 테스팅 가능)
 - 배틀 레벨에서, 클라이언트 측 예측 (프록시 투사체를 클라이언트 단에 생성하여 즉각 발사를 보여주는 로직)이 추가되었습니다.
 
-## 주요 기능 (Features)
-- **준비(Ready) 버튼:** 커스터마이징 완료 시 누르는 버튼으로, 플레이어의 준비 완료를 서버에 알립니다.  
-- **게임 모드 전환 (ReadyGameMode 지원):** 모든 플레이어가 준비되면 커스터마이징 전용 모드에서 본 게임 모드로 부드럽게 전환합니다.  
-- **메쉬 피벗 회전 기능:** 부착 아이템의 피벗을 기준으로 마우스 드래그를 통해 세밀하게 회전시킬 수 있습니다.  
-- **부착 미리보기 및 확정:** 아이템을 프리뷰 모드로 스폰하여 위치를 조정한 뒤 서버에 부착 요청을 보냅니다.  
-- **서버-클라이언트 동기화:** 모든 부착 로직은 서버 권한으로 실행되고, 최종 부착 결과는 서버에 저장되어 모든 클라이언트에 복제됩니다.  
-- **서브 컴포넌트와 게이트웨이 컴포넌:** 분리 설계로 책임 분산을 특징으로 합니다.  
-
-## 아키텍쳐
-
-```txt
-UAttachmentDataStore
-           │
-UCustomizingActorComponent  ←── Gateway API ──→  PlayerController
-           │
-           ├── UAttachmentPreviewComponent    (프리뷰·스냅·이동·확정)
-           ├── UAttachmentPersistenceComponent (Load/Save RPC)
-           └── UAttachmentFocusComponent      (클릭 포커스·기록 설정·삭제)
-           └── UAttachmentRotationComponent   (회전·회전 저장)
-```
-
-## 세부 기능 ##
+## 커스터마이징 세부 기능 ##
 
 - **프리뷰 스폰 & 스냅**  
   - `RequestSpawnByID(ID)` → PreviewActor가 마우스 위치에 스폰  
@@ -56,10 +39,6 @@ UCustomizingActorComponent  ←── Gateway API ──→  PlayerController
   - 모든 부착 기록을 서버-클라이언트 동기화  
 - **Ready Button**  
   - `PressReadyButton()` → `Server_SendReady` RPC → `ReadyGameMode` 전환
- 
-- **ProjectileActor**
-  - 상속 시, 왼쪽 클릭을 통해 PC에서 투사체 (투사체 클래스 BP에 지정된 Mock Actor Mesh)를 발사하는 기능이 추가된 투사체 액터입니다.
-  - 기존 UE의 Projectile 클래스의 레이턴시 지터링 문제를 해결합니다.
 
 ---
 
@@ -89,14 +68,6 @@ UCustomizingActorComponent  ←── Gateway API ──→  PlayerController
    - `PressReadyButton()` 호출로 서버에 Ready RPC 전송.  
    - 서버에서 `ReadyGameMode`가 모든 클라이언트 준비를 감지 후 `ServerTravel()` 호출.
 
-## 기여 및 향후 계획 (Contribution and Future Plans)
-- **기여:** PR, 이슈 제보 환영! 코드 스타일(로그, 영어 주석, 메모리 관리 등)을 준수 부탁드립니다.  
-- **향후 계획:**  
-  - 추가 UI 위젯 제공  
-  - SaveGame 기반 영구 저장/불러오기  
-  - 색상/스케일 조정 등 확장 커스터마이징
-  - Ready 기능 고도화
-  - 최적화 및 엔진 업데이트 대응
 
 ---
 ## Introduction
