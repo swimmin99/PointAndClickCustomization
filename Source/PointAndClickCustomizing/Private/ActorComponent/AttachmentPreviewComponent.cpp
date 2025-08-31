@@ -116,6 +116,8 @@ void UAttachmentPreviewComponent::FixLocation()
     TargetLocation = ClosestBoneLoc;
 }
 
+#include "DrawDebugHelpers.h"
+
 FVector UAttachmentPreviewComponent::GetMouseIntersectionLoc()
 {
     if (auto* PC = Cast<APlayerController>(GetOwner()))
@@ -129,22 +131,21 @@ FVector UAttachmentPreviewComponent::GetMouseIntersectionLoc()
             if (auto* Mesh = GetOrCacheMesh())
             {
                 const FVector PlanePoint  = Mesh->GetComponentLocation();
-                const FVector PlaneNormal = FVector::CrossProduct(
-                    FVector::UpVector,
-                    GetOrCacheCharacter()->GetCustomizingForwardVector()
-                ).GetSafeNormal();
-
+                const FVector Forward     = GetOrCacheCharacter()->GetCustomizingForwardVector();
+                //const FVector PlaneNormal = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
+                
                 return FMath::LinePlaneIntersection(
                     WorldLoc,
                     WorldLoc + WorldDir * 10000.f,
                     PlanePoint,
-                    PlaneNormal
+                    Forward
                 );
             }
         }
     }
     return FVector::ZeroVector;
 }
+
 
 void UAttachmentPreviewComponent::UpdateDebug()
 {

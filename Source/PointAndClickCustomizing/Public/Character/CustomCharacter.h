@@ -7,6 +7,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Interface/CutomizableCharacter.h"
 #include "PlayerController/BasePlayerController.h"
+#include "SceneComponent/MeshPivotComponent.h"
 #include "CustomCharacter.generated.h"
 
 class USpringArmComponent;
@@ -43,13 +44,19 @@ public:
 	/** Direction vector for customization plane. */
 	FVector GetCustomizingForwardVector() const
 	{
-		return CustomizingMesh 
-			? CustomizingMesh->GetForwardVector() 
+		return MeshPivot 
+			? MeshPivot->GetForwardVector() 
 			: FVector::ForwardVector;
 	}
 	/** Spring arm for camera positioning. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CustomizingPlugin|Camera")
 	USpringArmComponent* SpringArmComp;
+
+
+	virtual void SetCharacterRotation(float dir, float speed) {    FRotator R = MeshPivot->GetRelativeRotation();
+		R.Yaw += dir * speed;
+		MeshPivot->SetRelativeRotation(R);
+	}
 	
 protected:
 	virtual void BeginPlay() override;
