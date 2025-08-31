@@ -16,21 +16,35 @@ UAttachmentFocusComponent::UAttachmentFocusComponent()
     PrimaryComponentTick.bCanEverTick = false;
     RotationComp    = CreateDefaultSubobject<UAttachmentRotationComponent>(TEXT("RotationComp"));
 }
+
+
 void UAttachmentFocusComponent::UpdateFocusDetection()
 {
     APlayerController* PC = Cast<APlayerController>(GetOwner());
     if (!PC)
     {
+        UE_LOG(LogCustomizingPlugin, Warning, TEXT("[FocusDetection] Owner is not PlayerController."));
         GetOrCacheStateMachine()->SetState(ECustomizingState::Idle);
         return;
     }
 
-    FVector WorldOrigin, WorldDir;
-    if (!PC->DeprojectMousePositionToWorld(WorldOrigin, WorldDir))
+    if (!PC->IsLocalController())
     {
+        UE_LOG(LogCustomizingPlugin, Verbose, TEXT("[FocusDetection] Skipped - Not local controller."));
         GetOrCacheStateMachine()->SetState(ECustomizingState::Idle);
         return;
     }
+    UE_LOG(LogCustomizingPlugin, Verbose, TEXT("[FocusDetection] PlayerController valid and local."));
+
+    FVector WorldOrigin, WorldDir;
+    if (!PC->DeprojectMousePositionToWorld(WorldOrigin, WorldDir))
+    {
+        UE_LOG(LogCustomizingPlugin, Warning, TEXT("[FocusDetection] DeprojectMousePositionToWorld FAILED."));
+        GetOrCacheStateMachine()->SetState(ECustomizingState::Idle);
+        return;
+    }
+    UE_LOG(LogCustomizingPlugin, Verbose, TEXT("[FocusDetection] Deproject succeeded. Origin=%s Dir=%s"),
+        *WorldOrigin.ToString(), *WorldDir.ToString());
 
     const float TraceDistance = 10000.f;
     FVector Start = WorldOrigin;
@@ -46,18 +60,29 @@ void UAttachmentFocusComponent::UpdateFocusDetection()
 
     if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
     {
+        UE_LOG(LogCustomizingPlugin, Verbose, TEXT("[FocusDetection] LineTrace hit actor: %s"), *Hit.GetActor()->GetName());
+
         if (AAttachableActor* A = Cast<AAttachableActor>(Hit.GetActor()))
         {
             CachedCanFocusActor = A;
-            GetOrCacheStateMachine()->SetState(ECustomizingState::ActorCanFocus);
-            UE_LOG(LogCustomizingPlugin, Warning, TEXT("Hit Actor: %s"), *A->GetName());
+            UE_LOG(LogCustomizingPlugin, Log, TEXT("[FocusDetection] Found AttachableActor: %s"), *A->GetName());
             return;
         }
+        else
+        {
+            UE_LOG(LogCustomizingPlugin, Verbose, TEXT("[FocusDetection] Hit actor is not AAttachableActor."));
+        }
+    }
+    else
+    {
+        UE_LOG(LogCustomizingPlugin, Verbose, TEXT("[FocusDetection] LineTrace did not hit any actor."));
     }
 
     CachedCanFocusActor = nullptr;
     GetOrCacheStateMachine()->SetState(ECustomizingState::Idle);
+    UE_LOG(LogCustomizingPlugin, Verbose, TEXT("[FocusDetection] Reset to Idle."));
 }
+
 
 void UAttachmentFocusComponent::RotateFocusedActor(
     const FVector2D& PrevScreen,
@@ -80,7 +105,10 @@ void UAttachmentFocusComponent::EndRotate(FName PlayerID)
 
 bool UAttachmentFocusComponent::TryFocusAttachedActor()
 {
-    if (GetOrCacheStateMachine()->GetState() != ECustomizingState::ActorCanFocus
+    UE_LOG(LogCustomizingPlugin, Verbose, TEXT("[FocusDetection] TryFocusAttachedActor."));
+
+    UpdateFocusDetection();
+    if (GetOrCacheStateMachine()->GetState() != ECustomizingState::Idle
         || !CachedCanFocusActor)
     {
         return false;

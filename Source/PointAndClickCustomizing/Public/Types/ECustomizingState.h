@@ -14,5 +14,4 @@ enum class ECustomizingState : uint8
 	ActorMoving,    // Preview actor is being moved
 	ActorSnapped,   // Preview actor is snapped to a bone
 	ActorFocused,   // An attached actor is selected/focused
-	ActorCanFocus   // Hovering over an actor that can be focused
 };

@@ -62,7 +62,7 @@ AAttachableActor* UCustomizingGatewayComponent::GetFocusedActor()
 
 bool UCustomizingGatewayComponent::TryFocusAttachedActor()
 {
-    FocusComp->UpdateFocusDetection();
+    UE_LOG(LogCustomizingPlugin, Verbose, TEXT("[Gateway] TryFocusAttachedActor called."));
     return FocusComp->TryFocusAttachedActor();
 }
 
