@@ -12,7 +12,7 @@
 AProjectileActor::AProjectileActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	bReplicates = true; // 서버 복제 탄이 아니라면 클라 FX 전용으로 사용
+	bReplicates = true;
 
 	bNetUseOwnerRelevancy = true;
 	bOnlyRelevantToOwner = false;
