@@ -23,4 +23,7 @@ class POINTANDCLICKCUSTOMIZING_API IDamagableIneterface
 	public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Damage")
 	void ApplyDamage(float DamageAmount, AController* EventInstigator, AActor* DamageCauser);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Damage")
+	void ApplyDamageForMock(float DamageAmount, AController* EventInstigator, AActor* DamageCauser);
 };

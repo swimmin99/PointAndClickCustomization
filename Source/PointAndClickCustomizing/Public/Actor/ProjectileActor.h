@@ -10,11 +10,10 @@ class USphereComponent;
 class UProjectileMovementComponent;
 class UStaticMeshComponent;
 class UStaticMesh;
+class ABattleCharacter;
 
 /**
- * A replicated projectile actor.
- * Handles movement, collision, and damage application on the server.
- * Supports a client-side prediction model where the owning client has a local cosmetic version.
+ * A projectile actor supporting server-authoritative damage and client-predicted FX.
  */
 UCLASS()
 class POINTANDCLICKCUSTOMIZING_API AProjectileActor : public AActor
@@ -28,10 +27,11 @@ public:
 	void SetProjectileMesh(UStaticMesh* NewMesh);
 	void SetDamage(float NewDamage);
 	void multiplyDamage(float Multiplier);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const;
+	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USphereComponent> CollisionComponent;
@@ -45,8 +45,6 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_ProjectileMesh)
 	TObjectPtr<UStaticMesh> ProjectileMeshToUse;
 
-	
-
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -56,7 +54,8 @@ protected:
 	UFUNCTION()
 	void OnRep_ProjectileMesh();
 
+	
 private:
 	UPROPERTY(Replicated)
-	float Damage;
+	float Damage = 0.f;
 };

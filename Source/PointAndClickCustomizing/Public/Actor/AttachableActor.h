@@ -15,33 +15,33 @@
 UCLASS()
 class POINTANDCLICKCUSTOMIZING_API AAttachableActor : public AActor
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    AAttachableActor();
+	AAttachableActor();
 	virtual void BeginPlay() override;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CustomizingPlugin|Attachable")
-    FName ActorID;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CustomizingPlugin|Attachable")
+	FName ActorID;
 
 	void DisableCollision();
 
 	
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CustomizingPlugin|Attachable")
-    FName BoneName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CustomizingPlugin|Attachable")
+	FName BoneName;
 
 
-    static AAttachableActor* SpawnAttachment(
-        const FAttachmentRecord& TemplateActorInfo,
-        USkeletalMeshComponent* Skel,
-        UDataTable* ActorDataTable,
-        UObject* WorldContext
-    );
+	static AAttachableActor* SpawnAttachment(
+		const FAttachmentRecord& TemplateActorInfo,
+		USkeletalMeshComponent* Skel,
+		UDataTable* ActorDataTable,
+		UObject* WorldContext
+	);
 	
-    static AAttachableActor* SpawnPreview(
-        FName InActorID,
-        UDataTable* ActorDataTable,
-        UObject* WorldContext
-    );
+	static AAttachableActor* SpawnPreview(
+		FName InActorID,
+		UDataTable* ActorDataTable,
+		UObject* WorldContext
+	);
 	
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

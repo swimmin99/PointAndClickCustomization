@@ -7,16 +7,16 @@
 #include "Interface/DamagableIneterface.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
+#include "Character/BattleCharacter.h" // Victim RPC 위해
 
 AProjectileActor::AProjectileActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	bReplicates = true;
-	SetReplicatingMovement(true);
-	
+	bReplicates = true; // 서버 복제 탄이 아니라면 클라 FX 전용으로 사용
+
 	bNetUseOwnerRelevancy = true;
 	bOnlyRelevantToOwner = false;
-	
+
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
 	RootComponent = CollisionComponent;
 	CollisionComponent->SetCollisionProfileName(TEXT("BlockAllDynamic"));
@@ -29,7 +29,6 @@ AProjectileActor::AProjectileActor()
 	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
 	CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
-	
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	MeshComponent->SetupAttachment(RootComponent);
 	MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -43,20 +42,30 @@ AProjectileActor::AProjectileActor()
 
 	InitialLifeSpan = 3.0f;
 
-	if (HasAuthority())
-	{
-		CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AProjectileActor::OnOverlapBegin);
-		CollisionComponent->OnComponentHit.AddDynamic(this, &AProjectileActor::OnHit);
-	}
+	CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AProjectileActor::OnOverlapBegin);
+	CollisionComponent->OnComponentHit.AddDynamic(this, &AProjectileActor::OnHit);
 }
 
 void AProjectileActor::BeginPlay()
 {
 	Super::BeginPlay();
+
 	if (APawn* MyInstigator = GetInstigator())
 	{
 		CollisionComponent->IgnoreActorWhenMoving(MyInstigator, true);
 	}
+
+	if (ProjectileMeshToUse && MeshComponent && !MeshComponent->GetStaticMesh())
+	{
+		MeshComponent->SetStaticMesh(ProjectileMeshToUse);
+	}
+	MeshComponent->SetHiddenInGame(false);
+	MeshComponent->SetVisibility(true, true);
+
+	UE_LOG(LogTemp, Log, TEXT("Projectile %s BeginPlay: Mesh=%s, Replicates=%s"),
+		*GetName(),
+		ProjectileMeshToUse ? *ProjectileMeshToUse->GetName() : TEXT("NULL"),
+		bReplicates ? TEXT("true") : TEXT("false"));
 }
 
 void AProjectileActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -70,77 +79,87 @@ void AProjectileActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 bool AProjectileActor::IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const
 {
 	const AController* InstigatorController = GetInstigatorController();
-
 	if (InstigatorController == RealViewer)
 	{
-		return false;
+		return false; 
 	}
-
 	return Super::IsNetRelevantFor(RealViewer, ViewTarget, SrcLocation);
 }
 
 void AProjectileActor::SetProjectileMesh(UStaticMesh* NewMesh)
 {
-	if (!HasAuthority())
-	{
-		if (NewMesh)
-		{
-			MeshComponent->SetStaticMesh(NewMesh);
-		}
-		return;
-	}
-
 	ProjectileMeshToUse = NewMesh;
-	
-	OnRep_ProjectileMesh();
+	OnRep_ProjectileMesh(); 
 }
 
 void AProjectileActor::OnRep_ProjectileMesh()
 {
-	if (ProjectileMeshToUse)
+	if (ProjectileMeshToUse && MeshComponent)
 	{
 		MeshComponent->SetStaticMesh(ProjectileMeshToUse);
+		MeshComponent->SetHiddenInGame(false);
+		MeshComponent->SetVisibility(true, true);
 	}
 }
 
 void AProjectileActor::SetDamage(float NewDamage)
 {
-    if (HasAuthority())
-	{
-		Damage = NewDamage;
-	}
+	Damage = NewDamage;
 }
 
 void AProjectileActor::multiplyDamage(float Multiplier)
 {
-	if (HasAuthority())
-	{
-		Damage = Damage*=Multiplier;
-	}
+	Damage *= Multiplier;
 }
 
 void AProjectileActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (!HasAuthority())
-	{
-		return;
-	}
-
 	Destroy();
 }
 
-
-void AProjectileActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AProjectileActor::OnOverlapBegin(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult)
 {
-	if (!HasAuthority() || !OtherActor || OtherActor == this || OtherActor == GetInstigator())
+	const ENetMode NetMode = GetNetMode();
+	const bool bServerWorld = (NetMode == NM_DedicatedServer || NetMode == NM_ListenServer);
+
+	if (!OtherActor || OtherActor == this || OtherActor == GetInstigator())
 	{
+		Destroy();
 		return;
 	}
 
-	if (OtherActor->GetClass()->ImplementsInterface(UDamagableIneterface::StaticClass()))
+	if (!OtherActor->GetClass()->ImplementsInterface(UDamagableIneterface::StaticClass()))
 	{
-		IDamagableIneterface::Execute_ApplyDamage(OtherActor, Damage, GetInstigatorController(), this);
-
 		Destroy();
+		return;
+	}
+
+	if (!bServerWorld)
+	{
+		if (ABattleCharacter* Victim = Cast<ABattleCharacter>(OtherActor))
+		{
+			if (ABattleCharacter* OwnerChar = Cast<ABattleCharacter>(GetInstigator()))
+			{
+				OwnerChar->Execute_ApplyDamageForMock(
+					Victim, Damage, GetInstigatorController(), this
+				);
+			}
+		}
+		Destroy();
+		return;
+	}
+	else
+	{
+		IDamagableIneterface::Execute_ApplyDamage(
+			OtherActor, Damage, GetInstigatorController(), this
+		);
+		Destroy();
+		return;
 	}
 }
